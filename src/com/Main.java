@@ -2,13 +2,17 @@ package com;
 
 import java.util.Scanner;
 import boundary.BookingUI;
+import boundary.FacilityUI;
+import control.FacilityControl;
 
 public class Main {
 
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-        BookingUI bookingUI = new BookingUI();
+        FacilityControl facilityControl = new FacilityControl();
+        BookingUI bookingUI = new BookingUI(facilityControl);
+        FacilityUI facilityUI = new FacilityUI(facilityControl);
 
         // TODO: Initialize other modules
         // UserManagementUI userUI = new UserManagementUI();
@@ -30,9 +34,8 @@ public class Main {
                     break;
 
                 case 2:
-                    System.out.println("\n[Facility Management]");
-                    // TODO: facilityUI.start();
-                    System.out.println("Feature coming soon.");
+                    System.out.println("\n[Room Management]");
+                    facilityUI.start();
                     break;
 
                 case 3:
@@ -83,7 +86,7 @@ public class Main {
         System.out.println("     TARUMT FACILITIES MANAGEMENT SYSTEM   ");
         System.out.println("===========================================");
         System.out.println(" 1. Manage Users");
-        System.out.println(" 2. Manage Facilities");
+        System.out.println(" 2. Manage Rooms");
         System.out.println(" 3. Room Booking Services");
         System.out.println(" 0. Exit");
         System.out.println("===========================================");

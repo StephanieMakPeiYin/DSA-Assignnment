@@ -4,7 +4,6 @@ import adt.ArrayListADT;
 import adt.ListInterface;
 import entity.Booking;
 import entity.Room;
-import util.BookingDateTimeComparator;
 import util.BookingInputValidator;
 
 import java.time.LocalDate;
@@ -34,14 +33,16 @@ public class BookingControl {
     public static final int CANCEL_INVALID_STORED_DATE = 5;
 
     private ListInterface<Booking> bookingList = new ArrayListADT<>();
-    private ListInterface<Room> roomList = new ArrayListADT<>();
+    private final FacilityControl facilityControl;
 
     private int idCounter = 1;
 
     public BookingControl() {
-        roomList.add(new Room("R101", "Block A", 6));
-        roomList.add(new Room("R102", "Block A", 10));
-        roomList.add(new Room("R201", "Block B", 8));
+        this(new FacilityControl());
+    }
+
+    public BookingControl(FacilityControl facilityControl) {
+        this.facilityControl = facilityControl == null ? new FacilityControl() : facilityControl;
     }
 
     private String generateBookingID() {
@@ -49,14 +50,7 @@ public class BookingControl {
     }
 
     public Room findRoomById(String roomID) {
-        String key = normalizeRoomId(roomID);
-        for (int i = 1; i <= roomList.getLength(); i++) {
-            Room r = roomList.getEntry(i);
-            if (normalizeRoomId(r.getRoomID()).equals(key)) {
-                return r;
-            }
-        }
-        return null;
+        return facilityControl.searchFacility(roomID);
     }
 
     public Booking findBookingById(String bookingID) {
@@ -74,11 +68,7 @@ public class BookingControl {
     }
 
     public boolean roomExists(String roomID) {
-        return findRoomById(roomID) != null;
-    }
-
-    private static String normalizeRoomId(String id) {
-        return id == null ? "" : id.trim().toUpperCase();
+        return facilityControl.facilityExists(roomID);
     }
 
     public int bookRoom(String roomID, String date, String timeSlot) {
@@ -243,14 +233,15 @@ public class BookingControl {
     }
 
     public void displayRooms() {
-        if (roomList.isEmpty()) {
+        int len = facilityControl.getRoomsLength();
+        if (len == 0) {
             System.out.println("No rooms in the system.");
             return;
         }
         System.out.println("\n--- All rooms ---");
         System.out.println("Room ID | Location | Capacity");
-        for (int i = 1; i <= roomList.getLength(); i++) {
-            System.out.println(roomList.getEntry(i));
+        for (int i = 1; i <= len; i++) {
+            System.out.println(facilityControl.getRoomAt(i));
         }
     }
 
@@ -260,8 +251,9 @@ public class BookingControl {
 
         System.out.println("\n--- Rooms available for this date & time ---");
         int shown = 0;
-        for (int i = 1; i <= roomList.getLength(); i++) {
-            Room room = roomList.getEntry(i);
+        int len = facilityControl.getRoomsLength();
+        for (int i = 1; i <= len; i++) {
+            Room room = facilityControl.getRoomAt(i);
             boolean isBooked = false;
             for (int j = 1; j <= bookingList.getLength(); j++) {
                 Booking b = bookingList.getEntry(j);

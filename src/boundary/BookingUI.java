@@ -1,6 +1,7 @@
 package boundary;
 
 import control.BookingControl;
+import control.FacilityControl;
 import util.BookingInputValidator;
 
 import java.time.LocalDate;
@@ -8,8 +9,16 @@ import java.util.Scanner;
 
 public class BookingUI {
 
-    private final BookingControl control = new BookingControl();
+    private final BookingControl control;
     private final Scanner scanner = new Scanner(System.in);
+
+    public BookingUI() {
+        this(new FacilityControl());
+    }
+
+    public BookingUI(FacilityControl facilityControl) {
+        this.control = new BookingControl(facilityControl);
+    }
 
     public void start() {
         int choice;
@@ -139,7 +148,7 @@ public class BookingUI {
         System.out.println("\n--- New booking ---");
 
         control.displayRooms();
-        String roomID = readExistingRoomId("Room ID (e.g. R101): ");
+        String roomID = readExistingRoomId("Room ID (e.g. A101): ");
 
         LocalDate date = readValidBookingDate("Date (yyyy-MM-dd e.g. 2026-03-20): ", false);
         String timeSlot = readValidTimeSlot("Time slot (H:mm-H:mm e.g. 9:00-11:00): ");
