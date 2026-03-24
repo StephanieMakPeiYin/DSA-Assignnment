@@ -351,5 +351,33 @@ public class BookingControl {
     public boolean bookingExistsInList(Booking booking) {
         return bookingList.contains(booking);
     }
+
+    /**
+     * Get all bookings as a list
+     */
+    public java.util.List<Booking> getAllBookings() {
+        java.util.List<Booking> allBookings = new java.util.ArrayList<>();
+        for (int i = 1; i <= bookingList.getLength(); i++) {
+            allBookings.add(bookingList.getEntry(i));
+        }
+        return allBookings;
+    }
+
+    /**
+     * Get bookings for a specific date
+     */
+    public java.util.List<Booking> getBookingsByDate(String date) {
+        java.util.List<Booking> bookingsForDate = new java.util.ArrayList<>();
+        if (date == null || date.trim().isEmpty()) {
+            return bookingsForDate;
+        }
+        for (int i = 1; i <= bookingList.getLength(); i++) {
+            Booking b = bookingList.getEntry(i);
+            if (b.getDate().equals(date)) {
+                bookingsForDate.add(b);
+            }
+        }
+        return bookingsForDate;
+    }
 }
 

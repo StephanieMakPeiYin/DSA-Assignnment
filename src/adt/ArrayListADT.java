@@ -3,12 +3,14 @@ package adt;
 import java.util.Comparator;
 
 public class ArrayListADT<T> implements ListInterface<T> {
-    private T[] array;
+    private final T[] array;
     private int numberOfEntries;
     private static final int DEFAULT_CAPACITY = 50;
 
     public ArrayListADT() {
-        array = (T[]) new Object[DEFAULT_CAPACITY];
+        @SuppressWarnings("unchecked")
+        T[] temp = (T[]) new Object[DEFAULT_CAPACITY];
+        array = temp;
         numberOfEntries = 0;
     }
 

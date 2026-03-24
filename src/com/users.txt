@@ -1,0 +1,2 @@
+Staff|staff@gmail.com|12345|STAFF
+YK|yk@gmail.com|12345|STUDENT

@@ -93,21 +93,6 @@ public class BookingUI {
         } while (sub != 0);
     }
 
-    /**
-     * @return ALL, ACTIVE, or CANCELLED
-     */
-    private String readStatusFilter() {
-        System.out.println("\nWhich bookings to show?");
-        System.out.println("1. All");
-        System.out.println("2. Active only");
-        System.out.println("3. Cancelled only");
-        int c = readMenuChoice(1, 3);
-        return switch (c) {
-            case 2 -> "ACTIVE";
-            case 3 -> "CANCELLED";
-            default -> "ALL";
-        };
-    }
 
     private int readMenuChoice(int min, int max) {
         while (true) {
