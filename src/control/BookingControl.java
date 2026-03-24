@@ -5,6 +5,7 @@ import adt.ListInterface;
 import entity.Booking;
 import entity.Room;
 import util.BookingInputValidator;
+import util.BookingDateTimeComparator;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -12,10 +13,9 @@ import java.time.temporal.ChronoUnit;
 public class BookingControl {
 
     /**
-     * Minimum whole calendar days from today until the booking date required to cancel
-     * (e.g. 2 means you must cancel at least two days before the booking day).
+     * Maximum days in the future for booking (users can only book for the next 3 days).
      */
-    public static final int MIN_DAYS_NOTICE_TO_CANCEL = 2;
+    public static final int MAX_BOOKING_DAYS_AHEAD = 3;
 
     /** bookRoom: success */
     public static final int BOOK_OK = 0;
@@ -24,13 +24,17 @@ public class BookingControl {
     public static final int BOOK_INVALID_DATE = 3;
     public static final int BOOK_INVALID_TIME = 4;
     public static final int BOOK_DATE_IN_PAST = 5;
+    public static final int BOOK_OUTSIDE_BOOKING_WINDOW = 6;
 
     public static final int CANCEL_OK = 0;
     public static final int CANCEL_NOT_FOUND = 1;
     public static final int CANCEL_NOT_ACTIVE = 2;
-    public static final int CANCEL_TOO_LATE = 3;
-    public static final int CANCEL_PAST_BOOKING = 4;
-    public static final int CANCEL_INVALID_STORED_DATE = 5;
+    public static final int CANCEL_PAST_BOOKING = 3;
+    public static final int CANCEL_INVALID_STORED_DATE = 4;
+
+    /** removeBooking: success */
+    public static final int REMOVE_OK = 0;
+    public static final int REMOVE_NOT_FOUND = 1;
 
     private ListInterface<Booking> bookingList = new ArrayListADT<>();
     private final FacilityControl facilityControl;
@@ -86,8 +90,13 @@ public class BookingControl {
         }
 
         LocalDate today = LocalDate.now();
-        if (parsedDate.isBefore(today)) {
+        if (parsedDate.isBefore(today) || parsedDate.isEqual(today)) {
             return BOOK_DATE_IN_PAST;
+        }
+
+        long daysFromToday = ChronoUnit.DAYS.between(today, parsedDate);
+        if (daysFromToday > MAX_BOOKING_DAYS_AHEAD) {
+            return BOOK_OUTSIDE_BOOKING_WINDOW;
         }
 
         String d = BookingInputValidator.formatDate(parsedDate);
@@ -112,7 +121,7 @@ public class BookingControl {
     /**
      * Cancels with a reason; reason is stored on the booking when successful.
      */
-    public int cancelBooking(String bookingID, String cancelReason, LocalDate currentDate) {
+    public int cancelBooking(String bookingID, String cancelReason) {
         Booking b = findBookingById(bookingID);
         if (b == null) {
             return CANCEL_NOT_FOUND;
@@ -126,13 +135,9 @@ public class BookingControl {
             return CANCEL_INVALID_STORED_DATE;
         }
 
-        if (bookingDate.isBefore(currentDate)) {
+        LocalDate today = LocalDate.now();
+        if (bookingDate.isBefore(today)) {
             return CANCEL_PAST_BOOKING;
-        }
-
-        long daysUntil = ChronoUnit.DAYS.between(currentDate, bookingDate);
-        if (daysUntil < MIN_DAYS_NOTICE_TO_CANCEL) {
-            return CANCEL_TOO_LATE;
         }
 
         b.cancelWithReason(cancelReason);
@@ -143,7 +148,7 @@ public class BookingControl {
         return findBookingById(bookingID) != null;
     }
 
-    public int getCancelEligibility(String bookingID, LocalDate currentDate) {
+    public int getCancelEligibility(String bookingID) {
         Booking b = findBookingById(bookingID);
         if (b == null) {
             return CANCEL_NOT_FOUND;
@@ -155,12 +160,9 @@ public class BookingControl {
         if (bookingDate == null) {
             return CANCEL_INVALID_STORED_DATE;
         }
-        if (bookingDate.isBefore(currentDate)) {
+        LocalDate today = LocalDate.now();
+        if (bookingDate.isBefore(today)) {
             return CANCEL_PAST_BOOKING;
-        }
-        long daysUntil = ChronoUnit.DAYS.between(currentDate, bookingDate);
-        if (daysUntil < MIN_DAYS_NOTICE_TO_CANCEL) {
-            return CANCEL_TOO_LATE;
         }
         return CANCEL_OK;
     }
@@ -274,4 +276,80 @@ public class BookingControl {
             System.out.println("No rooms are free for that slot (all booked or no rooms).");
         }
     }
+
+    /**
+     * Uses ADT remove() method to permanently delete a booking from the list.
+     * Returns REMOVE_OK if successful, REMOVE_NOT_FOUND otherwise.
+     */
+    public int removeBooking(String bookingID) {
+        Booking b = findBookingById(bookingID);
+        if (b == null) {
+            return REMOVE_NOT_FOUND;
+        }
+        boolean removed = bookingList.remove(b);
+        return removed ? REMOVE_OK : REMOVE_NOT_FOUND;
+    }
+
+    /**
+     * Uses ADT sort() method to sort all bookings by date and time
+     * using the BookingDateTimeComparator, then displays them.
+     */
+    public void displaySortedBookings(String statusFilter) {
+        // Filter bookings into a temporary list
+        ListInterface<Booking> filteredList = new ArrayListADT<>();
+        for (int i = 1; i <= bookingList.getLength(); i++) {
+            Booking b = bookingList.getEntry(i);
+            if (matchesStatusFilter(b, statusFilter)) {
+                filteredList.add(b);
+            }
+        }
+
+        if (filteredList.isEmpty()) {
+            System.out.println(emptyFilterMessage(statusFilter));
+            return;
+        }
+
+        // Sort the filtered list using ADT sort() with BookingDateTimeComparator
+        filteredList.sort(new BookingDateTimeComparator());
+
+        System.out.println("\n--- Bookings (" + filterLabel(statusFilter) + ") - Sorted by Date & Time ---");
+        if ("ACTIVE".equalsIgnoreCase(statusFilter)) {
+            System.out.println("ID | Room | Date | Time | Status");
+        } else {
+            System.out.println("ID | Room | Date | Time | Status | (Reason if cancelled)");
+        }
+        for (int i = 1; i <= filteredList.getLength(); i++) {
+            System.out.println(filteredList.getEntry(i));
+        }
+    }
+
+    /**
+     * Uses ADT remove() method to permanently delete all bookings with past dates.
+     * Useful for cleaning up old data. Returns the count of removed bookings.
+     */
+    public int removeExpiredBookings() {
+        LocalDate today = LocalDate.now();
+        int removedCount = 0;
+
+        // Iterate through the list and remove past bookings
+        for (int i = bookingList.getLength(); i >= 1; i--) {
+            Booking b = bookingList.getEntry(i);
+            LocalDate bookingDate = BookingInputValidator.parseBookingDate(b.getDate());
+            if (bookingDate != null && bookingDate.isBefore(today)) {
+                bookingList.remove(i);
+                removedCount++;
+            }
+        }
+
+        return removedCount;
+    }
+
+    /**
+     * Uses ADT contains() method to check if a booking exists in the list.
+     * More efficient existence check using ADT's built-in method.
+     */
+    public boolean bookingExistsInList(Booking booking) {
+        return bookingList.contains(booking);
+    }
 }
+

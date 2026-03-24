@@ -150,7 +150,7 @@ public class BookingUI {
         control.displayRooms();
         String roomID = readExistingRoomId("Room ID (e.g. A101): ");
 
-        LocalDate date = readValidBookingDate("Date (yyyy-MM-dd e.g. 2026-03-20): ", false);
+        LocalDate date = readValidBookingDate("Date (yyyy-MM-dd e.g. 2026-03-25): ", false);
         String timeSlot = readValidTimeSlot("Time slot (H:mm-H:mm e.g. 9:00-11:00): ");
 
         int result = control.bookRoom(roomID, BookingInputValidator.formatDate(date), timeSlot);
@@ -164,7 +164,9 @@ public class BookingUI {
             case BookingControl.BOOK_INVALID_TIME ->
                 System.out.println("Invalid time slot (internal).");
             case BookingControl.BOOK_DATE_IN_PAST ->
-                System.out.println("Booking date cannot be in the past.");
+                System.out.println("Booking date cannot be today or in the past.");
+            case BookingControl.BOOK_OUTSIDE_BOOKING_WINDOW ->
+                System.out.println("Bookings are only available for the next 3 days.");
             default ->
                 System.out.println("Could not complete booking.");
         }
@@ -189,12 +191,20 @@ public class BookingUI {
             String raw = readRequiredLine(prompt);
             LocalDate d = BookingInputValidator.parseBookingDate(raw);
             if (d == null) {
-                System.out.println("Invalid date. Use format yyyy-MM-dd (e.g. 2026-03-20.");
+                System.out.println("Invalid date. Use format yyyy-MM-dd (e.g. 2026-03-25).");
                 continue;
             }
-            if (!allowPast && d.isBefore(LocalDate.now())) {
-                System.out.println("Date cannot be in the past. Choose today or a future date.");
-                continue;
+            if (!allowPast) {
+                LocalDate today = LocalDate.now();
+                if (d.isBefore(today) || d.isEqual(today)) {
+                    System.out.println("Date cannot be today or in the past. Choose a future date.");
+                    continue;
+                }
+                long daysFromToday = java.time.temporal.ChronoUnit.DAYS.between(today, d);
+                if (daysFromToday > BookingControl.MAX_BOOKING_DAYS_AHEAD) {
+                    System.out.println("Bookings are only available for the next 3 days.");
+                    continue;
+                }
             }
             return d;
         }
@@ -231,7 +241,7 @@ public class BookingUI {
                 return;
             }
             
-            int eligible = control.getCancelEligibility(id, LocalDate.now());
+            int eligible = control.getCancelEligibility(id);
             if (eligible == BookingControl.CANCEL_OK) {
                 break;
             }
@@ -242,15 +252,6 @@ public class BookingUI {
             printCancelRejection(eligible);
             return;
         }
-        
-        LocalDate currentDate = readValidBookingDate("Enter current date " + BookingInputValidator.DATE_PATTERN + ": ", true);
-        
-        int eligible = control.getCancelEligibility(id, currentDate);
-        if (eligible != BookingControl.CANCEL_OK) {
-            printCancelRejection(eligible);
-            pause();
-            return;
-        }
 
         if (!readConfirmation("Are you sure you want to cancel this booking? (y/n): ")) {
             System.out.println("Cancellation aborted.");
@@ -259,7 +260,7 @@ public class BookingUI {
         }
 
         String reason = readCancelReason();
-        int result = control.cancelBooking(id, reason, currentDate);
+        int result = control.cancelBooking(id, reason);
         if (result == BookingControl.CANCEL_OK) {
             System.out.println("Booking cancelled successfully.");
         } else {
@@ -288,16 +289,11 @@ public class BookingUI {
     }
 
     private void printCancelRejection(int code) {
-        int n = BookingControl.MIN_DAYS_NOTICE_TO_CANCEL;
         switch (code) {
             case BookingControl.CANCEL_NOT_FOUND ->
                 System.out.println("No booking with that ID.");
             case BookingControl.CANCEL_NOT_ACTIVE ->
                 System.out.println("That booking is not active (already cancelled).");
-            case BookingControl.CANCEL_TOO_LATE -> {
-                System.out.println("Too late to cancel: need at least " + n
-                        + " full calendar day(s) from today until the booking date.");
-            }
             case BookingControl.CANCEL_PAST_BOOKING ->
                 System.out.println("That booking date has already passed.");
             case BookingControl.CANCEL_INVALID_STORED_DATE ->
