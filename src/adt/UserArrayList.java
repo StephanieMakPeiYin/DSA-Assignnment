@@ -9,6 +9,8 @@ public class UserArrayList implements UserListADT {
     private User[] users;
     private int size;
     private static final int INITIAL_CAPACITY = 100;
+    private int studentIDCounter = 1;
+    private int staffIDCounter = 1;
 
     public UserArrayList() {
         users = new User[INITIAL_CAPACITY];
@@ -23,11 +25,55 @@ public class UserArrayList implements UserListADT {
                 resize();
             }
             users[size++] = user;
+            
+            // Update ID counters based on loaded users
+            String userID = user.getUserID();
+            if (userID != null) {
+                if (userID.startsWith("STU")) {
+                    updateStudentCounter(userID);
+                } else if (userID.startsWith("STA")) {
+                    updateStaffCounter(userID);
+                }
+            }
         }
+    }
+
+    private void updateStudentCounter(String userID) {
+        try {
+            int id = Integer.parseInt(userID.substring(3));
+            if (id >= studentIDCounter) {
+                studentIDCounter = id + 1;
+            }
+        } catch (NumberFormatException ignored) {
+            // Ignore malformed IDs and continue loading other records.
+        }
+    }
+
+    private void updateStaffCounter(String userID) {
+        try {
+            int id = Integer.parseInt(userID.substring(3));
+            if (id >= staffIDCounter) {
+                staffIDCounter = id + 1;
+            }
+        } catch (NumberFormatException ignored) {
+            // Ignore malformed IDs and continue loading other records.
+        }
+    }
+
+    private String generateUserID(String userType) {
+        if ("STUDENT".equals(userType)) {
+            return String.format("STU%03d", studentIDCounter++);
+        } else if ("STAFF".equals(userType)) {
+            return String.format("STA%03d", staffIDCounter++);
+        }
+        return "";
     }
 
     @Override
     public void addUser(User user) {
+        if (user.getUserID() == null || user.getUserID().isEmpty()) {
+            user.setUserID(generateUserID(user.getUserType()));
+        }
         if (size >= users.length) {
             resize();
         }
@@ -68,12 +114,24 @@ public class UserArrayList implements UserListADT {
     public boolean deleteUser(String email) {
         for (int i = 0; i < size; i++) {
             if (users[i].getEmail().equals(email)) {
-                // Remove user from array
-                for (int j = i; j < size - 1; j++) {
-                    users[j] = users[j + 1];
-                }
-                users[size - 1] = null;
-                size--;
+                // Soft delete: mark status as "removed" instead of physically deleting
+                users[i].setStatus("removed");
+                // Update file
+                UserFileManager.saveUsers(getAllUsers());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateUser(User updatedUser) {
+        if (updatedUser == null || updatedUser.getEmail() == null || updatedUser.getEmail().trim().isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (users[i].getEmail().equals(updatedUser.getEmail())) {
+                users[i] = updatedUser;
                 // Update file
                 UserFileManager.saveUsers(getAllUsers());
                 return true;

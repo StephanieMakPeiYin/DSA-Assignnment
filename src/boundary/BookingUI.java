@@ -3,6 +3,7 @@ package boundary;
 import control.BookingControl;
 import control.FacilityControl;
 import util.BookingInputValidator;
+import util.ConsoleColors;
 
 import java.time.LocalDate;
 import java.util.Scanner;
@@ -141,7 +142,7 @@ public class BookingUI {
         int result = control.bookRoom(roomID, BookingInputValidator.formatDate(date), timeSlot);
         switch (result) {
             case BookingControl.BOOK_OK ->
-                System.out.println("Booking successful. Your booking is saved as ACTIVE.");
+                System.out.println(ConsoleColors.success("Booking successful. Your booking is saved as ACTIVE."));
             case BookingControl.BOOK_SLOT_TAKEN ->
                 System.out.println("That room is already booked for this date and time.");
             case BookingControl.BOOK_INVALID_DATE ->
@@ -247,7 +248,7 @@ public class BookingUI {
         String reason = readCancelReason();
         int result = control.cancelBooking(id, reason);
         if (result == BookingControl.CANCEL_OK) {
-            System.out.println("Booking cancelled successfully.");
+            System.out.println(ConsoleColors.success("Booking cancelled successfully."));
         } else {
             System.out.println("Could not cancel (please try again). Code: " + result);
         }

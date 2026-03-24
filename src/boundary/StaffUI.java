@@ -3,6 +3,7 @@ package boundary;
 import control.UserControl;
 import control.BookingControl;
 import control.FacilityControl;
+import util.ConsoleColors;
 import java.util.Scanner;
 
 public class StaffUI {
@@ -37,7 +38,7 @@ public class StaffUI {
                     manageFacilities();
                     break;
                 case 0:
-                    System.out.println("\nLogout successful. Thank you!");
+                    System.out.println(ConsoleColors.success("\nLogout successful. Thank you!"));
                     return;
                 default:
                     System.out.println("\nInvalid choice. Please try again.");
@@ -49,23 +50,31 @@ public class StaffUI {
         int choice;
         do {
             System.out.println("\n========== MANAGE USERS ==========");
-            System.out.println("1. View all users");
-            System.out.println("2. Search user by email");
+            System.out.println("1. Add new user");
+            System.out.println("2. Update user information");
             System.out.println("3. Delete user");
+            System.out.println("4. Search user");
+            System.out.println("5. View all users");
             System.out.println("0. Back to menu");
             System.out.print("Enter your choice: ");
 
-            choice = readMenuChoice(0, 3);
+            choice = readMenuChoice(0, 5);
 
             switch (choice) {
                 case 1:
-                    viewAllUsers();
+                    addNewUser();
                     break;
                 case 2:
-                    searchUser();
+                    updateUserInformation();
                     break;
                 case 3:
                     deleteUser();
+                    break;
+                case 4:
+                    searchUser();
+                    break;
+                case 5:
+                    viewAllUsers();
                     break;
                 case 0:
                     return;
@@ -79,50 +88,133 @@ public class StaffUI {
         System.out.println("\n========== VIEW ALL USERS ==========");
         java.util.List<entity.User> users = userControl.getAllUsers();
         
-        // Filter out staff account
-        java.util.List<entity.User> studentUsers = new java.util.ArrayList<>();
+        // Filter out staff account and deleted users
+        java.util.List<entity.User> activeUsers = new java.util.ArrayList<>();
         for (entity.User user : users) {
-            if (!user.getEmail().equals("staff@gmail.com")) {
-                studentUsers.add(user);
+            if (!user.getEmail().equals("staff@gmail.com") && "active".equals(user.getStatus())) {
+                activeUsers.add(user);
             }
         }
         
-        if (studentUsers.isEmpty()) {
-            System.out.println("No users found in the system.");
+        if (activeUsers.isEmpty()) {
+            System.out.println("No active users found in the system.");
             return;
         }
         
-        System.out.println(String.format("\nTotal Users: %d\n", studentUsers.size()));
-        System.out.println(String.format("%-25s %-25s %-12s", "Name", "Email", "User Type"));
-        System.out.println("-".repeat(62));
+        System.out.println(String.format("\nTotal Active Users: %d\n", activeUsers.size()));
+        System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
+        System.out.println("-".repeat(70));
         
-        for (entity.User user : studentUsers) {
-            System.out.println(String.format("%-25s %-25s %-12s", 
-                user.getName(), user.getEmail(), user.getUserType()));
+        for (entity.User user : activeUsers) {
+            System.out.println(String.format("%-10s %-20s %-25s %-12s", 
+                user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
         }
     }
 
     private void searchUser() {
         System.out.println("\n========== SEARCH USER ==========");
+        System.out.println("Search by:");
+        System.out.println("1. User ID");
+        System.out.println("2. Name");
+        System.out.println("3. Email");
+        System.out.print("Enter your choice (1-3): ");
+        
+        int choice = readMenuChoice(1, 3);
+        
+        switch (choice) {
+            case 1:
+                searchByUserID();
+                break;
+            case 2:
+                searchByName();
+                break;
+            case 3:
+                searchByEmail();
+                break;
+            default:
+                System.out.println("\nInvalid choice.");
+        }
+    }
+
+    private void searchByUserID() {
+        System.out.print("Enter User ID to search (e.g. STU001, STA001): ");
+        String userID = scanner.nextLine().trim();
+        
+        if (userID.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User ID cannot be empty."));
+            return;
+        }
+        
+        entity.User user = userControl.findUserByID(userID);
+        
+        if (user == null || "removed".equals(user.getStatus())) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User not found with ID: " + userID));
+            return;
+        }
+        
+        displayUserDetails(user);
+    }
+
+    private void searchByName() {
+        System.out.print("Enter name to search (partial match supported): ");
+        String name = scanner.nextLine().trim();
+        
+        if (name.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Name cannot be empty."));
+            return;
+        }
+        
+        java.util.List<entity.User> results = userControl.findUsersByName(name);
+        
+        // Filter out deleted users
+        java.util.List<entity.User> activeResults = new java.util.ArrayList<>();
+        for (entity.User user : results) {
+            if ("active".equals(user.getStatus())) {
+                activeResults.add(user);
+            }
+        }
+        
+        if (activeResults.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] No active users found matching name: " + name));
+            return;
+        }
+        
+        System.out.println(ConsoleColors.success("\n[SUCCESS] Found " + activeResults.size() + " user(s) matching name: " + name));
+        System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
+        System.out.println("-".repeat(70));
+        
+        for (entity.User user : activeResults) {
+            System.out.println(String.format("%-10s %-20s %-25s %-12s", 
+                user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
+        }
+    }
+
+    private void searchByEmail() {
         System.out.print("Enter email to search: ");
         String email = scanner.nextLine().trim();
         
         if (email.isEmpty()) {
-            System.out.println("\n[ERROR] Email cannot be empty.");
+            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
             return;
         }
         
         entity.User user = userControl.findUserByEmail(email);
         
-        if (user == null) {
-            System.out.println("\n[ERROR] User not found with email: " + email);
+        if (user == null || "removed".equals(user.getStatus())) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
             return;
         }
         
+        displayUserDetails(user);
+    }
+
+    private void displayUserDetails(entity.User user) {
         System.out.println("\n========== USER DETAILS ==========");
+        System.out.println("User ID: " + user.getUserID());
         System.out.println("Name: " + user.getName());
         System.out.println("Email: " + user.getEmail());
         System.out.println("User Type: " + user.getUserType());
+        System.out.println("Status: " + user.getStatus());
     }
 
     private void deleteUser() {
@@ -131,19 +223,19 @@ public class StaffUI {
         String email = scanner.nextLine().trim();
         
         if (email.isEmpty()) {
-            System.out.println("\n[ERROR] Email cannot be empty.");
+            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
             return;
         }
         
         // Prevent deleting staff account
         if (email.equals("staff@gmail.com")) {
-            System.out.println("\n[ERROR] Cannot delete default staff account.");
+            System.out.println(ConsoleColors.error("\n[ERROR] Cannot delete default staff account."));
             return;
         }
         
         entity.User userToDelete = userControl.findUserByEmail(email);
         if (userToDelete == null) {
-            System.out.println("\n[ERROR] User not found with email: " + email);
+            System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
             return;
         }
         
@@ -162,9 +254,128 @@ public class StaffUI {
         
         boolean deleted = userControl.deleteUser(email);
         if (deleted) {
-            System.out.println("\n[SUCCESS] User deleted successfully.");
+            System.out.println(ConsoleColors.success("\n[SUCCESS] User deleted successfully."));
         } else {
-            System.out.println("\n[ERROR] Failed to delete user.");
+            System.out.println(ConsoleColors.error("\n[ERROR] Failed to delete user."));
+        }
+    }
+
+    private void addNewUser() {
+        System.out.println("\n========== ADD NEW USER ==========");
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine().trim();
+        
+        if (name.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Name cannot be empty."));
+            return;
+        }
+        
+        System.out.print("Enter email (format: username@gmail.com): ");
+        String email = scanner.nextLine().trim();
+        
+        if (email.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
+            return;
+        }
+        
+        if (!email.endsWith("@gmail.com")) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Email must be in format: username@gmail.com"));
+            return;
+        }
+        
+        if (userControl.findUserByEmail(email) != null) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Email already exists in the system."));
+            return;
+        }
+        
+        System.out.print("Enter password (minimum 4 characters): ");
+        String password = scanner.nextLine();
+        
+        if (password.length() < 4) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 4 characters."));
+            return;
+        }
+        
+        System.out.print("Enter user type (STAFF/STUDENT): ");
+        String userType = scanner.nextLine().trim().toUpperCase();
+        
+        if (!userType.equals("STAFF") && !userType.equals("STUDENT")) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User type must be STAFF or STUDENT."));
+            return;
+        }
+        
+        entity.User newUser = new entity.User(null, name, email, password, userType);
+        userControl.addUser(newUser);
+        System.out.println(ConsoleColors.success("\n[SUCCESS] New user added successfully!"));
+        System.out.println("User ID: " + newUser.getUserID());
+        System.out.println("Name: " + name);
+        System.out.println("Email: " + email);
+        System.out.println("User Type: " + userType);
+    }
+
+    private void updateUserInformation() {
+        System.out.println("\n========== UPDATE USER INFORMATION ==========");
+        System.out.print("Enter email of user to update: ");
+        String email = scanner.nextLine().trim();
+        
+        if (email.isEmpty()) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
+            return;
+        }
+        
+        entity.User existingUser = userControl.findUserByEmail(email);
+        if (existingUser == null || "removed".equals(existingUser.getStatus())) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
+            return;
+        }
+        
+        if (existingUser.getEmail().equals("staff@gmail.com")) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Cannot modify the default staff account."));
+            return;
+        }
+        
+        System.out.println("\n========== CURRENT USER DETAILS ==========");
+        System.out.println("User ID: " + existingUser.getUserID());
+        System.out.println("Name: " + existingUser.getName());
+        System.out.println("Email: " + existingUser.getEmail());
+        System.out.println("User Type: " + existingUser.getUserType());
+        System.out.println("Status: " + existingUser.getStatus());
+        
+        System.out.println("\n--- Enter new information (press Enter to keep current) ---");
+        
+        System.out.print("New name [" + existingUser.getName() + "]: ");
+        String newName = scanner.nextLine().trim();
+        if (newName.isEmpty()) {
+            newName = existingUser.getName();
+        }
+        
+        System.out.print("New password (minimum 4 characters) [keep current]: ");
+        String newPassword = scanner.nextLine();
+        if (newPassword.isEmpty()) {
+            newPassword = existingUser.getPassword();
+        } else if (newPassword.length() < 4) {
+            System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 4 characters."));
+            return;
+        }
+        
+        System.out.print("New user type (STAFF/STUDENT) [" + existingUser.getUserType() + "]: ");
+        String newUserType = scanner.nextLine().trim().toUpperCase();
+        if (newUserType.isEmpty()) {
+            newUserType = existingUser.getUserType();
+        } else if (!newUserType.equals("STAFF") && !newUserType.equals("STUDENT")) {
+            System.out.println(ConsoleColors.error("\n[ERROR] User type must be STAFF or STUDENT."));
+            return;
+        }
+        
+        entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, existingUser.getEmail(), newPassword, newUserType, existingUser.getStatus());
+        boolean success = userControl.updateUser(updatedUser);
+        
+        if (success) {
+            System.out.println(ConsoleColors.success("\n[SUCCESS] User information updated successfully!"));
+            System.out.println("Name: " + newName);
+            System.out.println("User Type: " + newUserType);
+        } else {
+            System.out.println(ConsoleColors.error("\n[ERROR] Failed to update user information."));
         }
     }
 
@@ -230,14 +441,14 @@ public class StaffUI {
         String bookingID = scanner.nextLine().trim();
         
         if (bookingID.isEmpty()) {
-            System.out.println("\n[ERROR] Booking ID cannot be empty.");
+            System.out.println(ConsoleColors.error("\n[ERROR] Booking ID cannot be empty."));
             return;
         }
         
         entity.Booking booking = bookingControl.findBookingById(bookingID);
         
         if (booking == null) {
-            System.out.println("\n[ERROR] Booking not found with ID: " + bookingID);
+            System.out.println(ConsoleColors.error("\n[ERROR] Booking not found with ID: " + bookingID));
             return;
         }
         

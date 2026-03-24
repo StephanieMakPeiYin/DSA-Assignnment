@@ -10,4 +10,5 @@ public interface UserListADT {
     int getSize();
     List<User> getAllUsers();
     boolean deleteUser(String email);
+    boolean updateUser(User updatedUser);
 }

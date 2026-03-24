@@ -1,1 +1,2 @@
 Staff|staff@gmail.com|12345|STAFF
+STA001|Staff|staff@gmail.com|12345|STAFF|active

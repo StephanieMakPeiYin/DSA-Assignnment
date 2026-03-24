@@ -1,6 +1,7 @@
 package boundary;
 
 import control.AuthenticationControl;
+import util.ConsoleColors;
 import java.util.Scanner;
 
 public class AuthenticationUI {
@@ -49,7 +50,7 @@ public class AuthenticationUI {
         String result = authControl.login(email, password);
 
         if (result.equals("LOGIN_SUCCESS")) {
-            System.out.println("\nLogin successful!");
+            System.out.println(ConsoleColors.success("\nLogin successful!"));
             System.out.println("Welcome, " + authControl.getCurrentUser().getName());
             if (authControl.isStaff()) {
                 System.out.println("You are logged in as STAFF");
@@ -57,7 +58,7 @@ public class AuthenticationUI {
                 System.out.println("You are logged in as STUDENT");
             }
         } else {
-            System.out.println("\n[ERROR] " + result);
+            System.out.println(ConsoleColors.error("\n[ERROR] " + result));
         }
     }
 
@@ -78,12 +79,16 @@ public class AuthenticationUI {
         String result = authControl.register(name, email, password, confirmPassword);
 
         if (result.equals("REGISTER_SUCCESS")) {
-            System.out.println("\nRegistration successful!");
+            System.out.println(ConsoleColors.success("\nRegistration successful!"));
+            entity.User createdUser = authControl.getLastCreatedUser();
+            if (createdUser != null) {
+                System.out.println("Your User ID: " + createdUser.getUserID());
+            }
             System.out.println("Account created for: " + name);
             System.out.println("Email: " + email);
             System.out.println("You can now login with your credentials.");
         } else {
-            System.out.println("\n[ERROR] " + result);
+            System.out.println(ConsoleColors.error("\n[ERROR] " + result));
         }
     }
 

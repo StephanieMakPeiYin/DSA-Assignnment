@@ -22,12 +22,14 @@ public class UserFileManager {
                 if (line.isEmpty()) continue;
                 
                 String[] parts = line.split("\\|");
-                if (parts.length == 4) {
-                    String name = parts[0].trim();
-                    String email = parts[1].trim();
-                    String password = parts[2].trim();
-                    String userType = parts[3].trim();
-                    users.add(new User(name, email, password, userType));
+                if (parts.length >= 5) {
+                    String userID = parts[0].trim();
+                    String name = parts[1].trim();
+                    String email = parts[2].trim();
+                    String password = parts[3].trim();
+                    String userType = parts[4].trim();
+                    String status = parts.length > 5 ? parts[5].trim() : "active";
+                    users.add(new User(userID, name, email, password, userType, status));
                 }
             }
         } catch (FileNotFoundException e) {
@@ -46,7 +48,7 @@ public class UserFileManager {
     public static void saveUsers(List<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(USER_FILE))) {
             for (User user : users) {
-                String line = user.getName() + DELIMITER + user.getEmail() + DELIMITER + user.getPassword() + DELIMITER + user.getUserType();
+                String line = user.getUserID() + DELIMITER + user.getName() + DELIMITER + user.getEmail() + DELIMITER + user.getPassword() + DELIMITER + user.getUserType() + DELIMITER + user.getStatus();
                 writer.write(line);
                 writer.newLine();
             }
@@ -71,7 +73,7 @@ public class UserFileManager {
         
         // User doesn't exist, append to file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(USER_FILE, true))) {
-            String line = user.getName() + DELIMITER + user.getEmail() + DELIMITER + user.getPassword() + DELIMITER + user.getUserType();
+            String line = user.getUserID() + DELIMITER + user.getName() + DELIMITER + user.getEmail() + DELIMITER + user.getPassword() + DELIMITER + user.getUserType() + DELIMITER + user.getStatus();
             writer.write(line);
             writer.newLine();
         } catch (IOException e) {

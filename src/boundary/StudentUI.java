@@ -1,6 +1,7 @@
 package boundary;
 
 import control.FacilityControl;
+import util.ConsoleColors;
 import java.util.Scanner;
 
 public class StudentUI {
@@ -24,7 +25,7 @@ public class StudentUI {
                     bookingUI.start();
                     break;
                 case 0:
-                    System.out.println("\nLogout successful. Thank you!");
+                    System.out.println(ConsoleColors.success("\nLogout successful. Thank you!"));
                     return;
                 default:
                     System.out.println("\nInvalid choice. Please try again.");

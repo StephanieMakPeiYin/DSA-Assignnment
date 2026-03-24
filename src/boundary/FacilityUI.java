@@ -2,6 +2,7 @@ package boundary;
 
 import control.FacilityControl;
 import entity.Room;
+import util.ConsoleColors;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,11 +82,11 @@ public class FacilityUI {
         int result = control.addFacility(name, capacity, block, floor, roomNum);
 
         if (result == FacilityControl.ADD_OK) {
-            System.out.println("Room successfully added to the system!");
+            System.out.println(ConsoleColors.success("Room successfully added to the system!"));
         } else if (result == FacilityControl.ADD_DUPLICATE_ID) {
-            System.out.println("Error: A room already exists at that exact Block, Floor, and Room.");
+            System.out.println(ConsoleColors.error("Error: A room already exists at that exact Block, Floor, and Room."));
         } else {
-            System.out.println("Could not add the room.");
+            System.out.println(ConsoleColors.error("Could not add the room."));
         }
         pause();
     }
@@ -118,9 +119,9 @@ public class FacilityUI {
         int result = control.updateFacility(id, newName, newCapacity, newBlock, newFloor, newRoomNum);
 
         if (result == FacilityControl.OPERATION_OK) {
-            System.out.println("Room details updated successfully!");
+            System.out.println(ConsoleColors.success("Room details updated successfully!"));
         } else {
-            System.out.println("Failed to update room.");
+            System.out.println(ConsoleColors.error("Failed to update room."));
         }
         pause();
     }
@@ -146,9 +147,9 @@ public class FacilityUI {
 
         int result = control.removeFacility(id);
         if (result == FacilityControl.OPERATION_OK) {
-            System.out.println("Room removed successfully.");
+            System.out.println(ConsoleColors.success("Room removed successfully."));
         } else {
-            System.out.println("Failed to remove room.");
+            System.out.println(ConsoleColors.error("Failed to remove room."));
         }
         pause();
     }
