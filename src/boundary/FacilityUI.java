@@ -73,15 +73,15 @@ public class FacilityUI {
     private void addRoom() {
         System.out.println("\n--- Add New Room ---");
 
-        String name = readRequiredLine("Enter Room Name (e.g., Meeting Room A): ");
         int capacity = readValidInt("Enter Capacity (1-30): ", 1, 30);
         String block = readRequiredLine("Enter Block (e.g., A, B, DK): ");
         int floor = readValidInt("Enter Floor (1-5): ", 1, 5);
         int roomNum = readValidInt("Enter Room Number (1-99): ", 1, 99);
+        String equipment = readEquipmentSelection(false, "");
 
-        int result = control.addFacility(name, capacity, block, floor, roomNum);
+        int result = control.addFacility(capacity, block, floor, roomNum, equipment);
 
-        if (result == FacilityControl.ADD_OK) {
+        1
             System.out.println(ConsoleColors.success("Room successfully added to the system!"));
         } else if (result == FacilityControl.ADD_DUPLICATE_ID) {
             System.out.println(ConsoleColors.error("Error: A room already exists at that exact Block, Floor, and Room."));
@@ -110,13 +110,13 @@ public class FacilityUI {
         int currentFloor = extractFloorFromLocation(existing.getLocation());
         int currentRoomNum = extractRoomNumFromLocation(existing.getLocation());
 
-        String newName = readOptionalLine("Enter New Name (press Enter to keep [" + existing.getName() + "]): ", existing.getName());
         int newCapacity = readOptionalInt("Enter New Capacity (1-30) (press Enter to keep [" + existing.getCapacity() + "]): ", 1, 30, existing.getCapacity());
         String newBlock = readOptionalLine("Enter New Block (e.g., A, B, DK) (press Enter to keep [" + currentBlock + "]): ", currentBlock);
         int newFloor = readOptionalInt("Enter New Floor (1-5) (press Enter to keep [" + currentFloor + "]): ", 1, 5, currentFloor);
         int newRoomNum = readOptionalInt("Enter New Room Number (1-99) (press Enter to keep [" + currentRoomNum + "]): ", 1, 99, currentRoomNum);
+        String newEquipment = readEquipmentSelection(true, existing.getEquipment());
 
-        int result = control.updateFacility(id, newName, newCapacity, newBlock, newFloor, newRoomNum);
+        int result = control.updateFacility(id, newCapacity, newBlock, newFloor, newRoomNum, newEquipment);
 
         if (result == FacilityControl.OPERATION_OK) {
             System.out.println(ConsoleColors.success("Room details updated successfully!"));
@@ -293,6 +293,49 @@ public class FacilityUI {
             }
         }
         return 1;
+    }
+
+    private String readEquipmentSelection(boolean allowKeepCurrent, String currentEquipment) {
+        while (true) {
+            System.out.println("\nSelect equipment:");
+            System.out.println("1. Projector");
+            System.out.println("2. Computer");
+            System.out.println("3. Charging Port");
+            System.out.println("4. Other");
+            if (allowKeepCurrent) {
+                System.out.print("Enter choice (1-4, or press Enter to keep [" + currentEquipment + "]): ");
+            } else {
+                System.out.print("Enter choice (1-4): ");
+            }
+
+            String line = scanner.nextLine();
+            if (line == null) {
+                return allowKeepCurrent ? currentEquipment : "Other";
+            }
+
+            String input = line.trim();
+            if (allowKeepCurrent && input.isEmpty()) {
+                return currentEquipment;
+            }
+
+            if ("1".equals(input)) {
+                return "Projector";
+            }
+            if ("2".equals(input)) {
+                int qty = readValidInt("Enter Computer quantity (1-5): ", 1, 5);
+                return "Computer x" + qty;
+            }
+            if ("3".equals(input)) {
+                int qty = readValidInt("Enter Charging Port quantity (1-5): ", 1, 5);
+                return "Charging Port x" + qty;
+            }
+            if ("4".equals(input)) {
+                String other = readRequiredLine("Enter other equipment name: ");
+                return other;
+            }
+
+            System.out.println("Invalid choice. Please enter 1, 2, 3, or 4.");
+        }
     }
 }
 

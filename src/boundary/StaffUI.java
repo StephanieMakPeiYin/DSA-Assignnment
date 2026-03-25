@@ -1,16 +1,18 @@
 package boundary;
 
-import control.UserControl;
 import control.BookingControl;
 import control.FacilityControl;
-import util.ConsoleColors;
+import control.UserControl;
+import entity.Room;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import util.ConsoleColors;
 
 public class StaffUI {
     @SuppressWarnings("unused")
     private final UserControl userControl;
     private final BookingControl bookingControl;
-    @SuppressWarnings("unused")
     private final FacilityControl facilityControl;
     private final Scanner scanner;
 
@@ -502,36 +504,362 @@ public class StaffUI {
     }
 
     private void manageFacilities() {
-        System.out.println("\n========== MANAGE FACILITIES ==========");
-        System.out.println("1. View all facilities");
-        System.out.println("2. Add new facility");
-        System.out.println("3. Update facility");
-        System.out.println("4. Delete facility");
-        System.out.println("0. Back to menu");
-        System.out.print("Enter your choice: ");
+        int choice;
+        do {
+            System.out.println("\n========== MANAGE FACILITIES ==========");
+            System.out.println("1. View all facilities");
+            System.out.println("2. Add new facility");
+            System.out.println("3. Update facility");
+            System.out.println("4. Delete facility");
+            System.out.println("0. Back to menu");
+            System.out.print("Enter your choice: ");
 
-        int choice = readMenuChoice(0, 4);
+            choice = readMenuChoice(0, 4);
 
+            switch (choice) {
+                case 1:
+                    viewAllFacilities();
+                    break;
+                case 2:
+                    addNewFacility();
+                    break;
+                case 3:
+                    updateFacility();
+                    break;
+                case 4:
+                    deleteFacility();
+                    break;
+                case 0:
+                    return;
+                default:
+                    System.out.println("\nInvalid choice. Please try again.");
+            }
+        } while (true);
+    }
+
+    private void viewAllFacilities() {
+        System.out.println("\n========== VIEW ALL FACILITIES ==========");
+        facilityControl.displayFacilityList();
+    }
+
+    private void addNewFacility() {
+        System.out.println("\n========== ADD NEW FACILITY ==========");
+        
+        while (true) {
+            try {
+                System.out.print("Enter capacity (1-30) or 0 to exit: ");
+                int capacity = Integer.parseInt(scanner.nextLine().trim());
+                if (capacity == 0) {
+                    return;
+                }
+                if (capacity < 1 || capacity > 30) {
+                    System.out.println(ConsoleColors.error("Capacity must be between 1 and 30."));
+                    continue;
+                }
+
+                System.out.print("Enter block (e.g., A, B): ");
+                String block = scanner.nextLine().trim();
+
+                System.out.print("Enter floor (1-5) or 0 to exit: ");
+                int floor = Integer.parseInt(scanner.nextLine().trim());
+                if (floor == 0) {
+                    return;
+                }
+                if (floor < 1 || floor > 5) {
+                    System.out.println(ConsoleColors.error("Floor must be between 1 and 5."));
+                    continue;
+                }
+
+                System.out.print("Enter room number (1-99) or 0 to exit: ");
+                int roomNumber = Integer.parseInt(scanner.nextLine().trim());
+                if (roomNumber == 0) {
+                    return;
+                }
+                if (roomNumber < 1 || roomNumber > 99) {
+                    System.out.println(ConsoleColors.error("Room number must be between 1 and 99."));
+                    continue;
+                }
+                
+                String equipment = selectEquipment();
+
+                int result = facilityControl.addFacility(capacity, block, floor, roomNumber, equipment);
+                if (result == FacilityControl.ADD_OK) {
+                    System.out.println(ConsoleColors.success("Facility added successfully!"));
+                    return;
+                } else if (result == FacilityControl.ADD_DUPLICATE_ID) {
+                    System.out.println(ConsoleColors.error("Facility with this ID already exists!"));
+                    continue;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println(ConsoleColors.error("Invalid input. Please enter valid numbers."));
+            }
+        }
+    }
+
+    private void updateFacility() {
+        System.out.println("\n========== UPDATE FACILITY ==========");
+        System.out.print("Enter facility ID to update: ");
+        String facilityId = scanner.nextLine().trim();
+        
+        Room currentFacility = facilityControl.searchFacility(facilityId);
+        if (currentFacility == null) {
+            System.out.println(ConsoleColors.error("Facility not found!"));
+            return;
+        }
+
+        try {
+            while (true) {
+                System.out.print("Enter new capacity (1-30) or 0 to keep current: ");
+                int capacity = Integer.parseInt(scanner.nextLine().trim());
+                if (capacity == 0) {
+                    capacity = currentFacility.getCapacity();
+                } else if (capacity < 1 || capacity > 30) {
+                    System.out.println(ConsoleColors.error("Capacity must be between 1 and 30."));
+                    continue;
+                }
+                
+                // Parse current location to keep block, floor, room number unchanged
+                String[] locationParts = parseLocation(currentFacility.getLocation());
+                String block = locationParts[0];
+                int floor = Integer.parseInt(locationParts[1]);
+                int roomNumber = Integer.parseInt(locationParts[2]);
+                
+                String equipment = updateEquipment(currentFacility.getEquipment());
+
+                int result = facilityControl.updateFacility(facilityId, capacity, block, floor, roomNumber, equipment);
+                if (result == FacilityControl.OPERATION_OK) {
+                    System.out.println(ConsoleColors.success("Facility updated successfully!"));
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println(ConsoleColors.error("Invalid input. Please enter valid numbers."));
+        }
+    }
+
+    private void deleteFacility() {
+        System.out.println("\n========== DELETE FACILITY ==========");
+        System.out.print("Enter facility ID to delete: ");
+        String facilityId = scanner.nextLine().trim();
+        
+        int result = facilityControl.removeFacility(facilityId);
+        if (result == FacilityControl.OPERATION_OK) {
+            System.out.println(ConsoleColors.success("Facility deleted successfully!"));
+        } else if (result == FacilityControl.FACILITY_NOT_FOUND) {
+            System.out.println(ConsoleColors.error("Facility not found!"));
+        }
+    }
+
+    private String selectEquipment() {
+        List<String> selectedEquipment = new ArrayList<>();
+        
+        while (true) {
+            System.out.println("\nSelect equipment (multiple allowed):");
+            System.out.println("1. Projector");
+            System.out.println("2. Computer");
+            System.out.println("3. Charging Port");
+            System.out.println("4. Other");
+            System.out.println("5. Done");
+            System.out.print("Enter your choice: ");
+            
+            int choice = readMenuChoice(1, 5);
+            if (choice == -1) continue;
+            
+            if (choice == 5) {
+                break;
+            }
+            
+            String equipment = "";
+            switch (choice) {
+                case 1:
+                    equipment = selectQuantity("Projector");
+                    break;
+                case 2:
+                    equipment = selectQuantity("Computer");
+                    break;
+                case 3:
+                    equipment = selectQuantity("Charging Port");
+                    break;
+                case 4:
+                    System.out.print("Enter custom equipment name: ");
+                    String customName = scanner.nextLine().trim();
+                    if (customName.isEmpty()) {
+                        customName = "Other";
+                    }
+                    equipment = selectQuantity(customName);
+                    break;
+            }
+            
+            // Check if already selected
+            if (!selectedEquipment.contains(equipment)) {
+                selectedEquipment.add(equipment);
+                System.out.println("Added: " + equipment);
+            } else {
+                System.out.println("Already selected: " + equipment);
+            }
+        }
+        
+        if (selectedEquipment.isEmpty()) {
+            return "Other";
+        }
+        
+        return String.join(", ", selectedEquipment);
+    }
+
+    private String selectQuantity(String item) {
+        System.out.print("Enter quantity for " + item + " (1-5): ");
+        try {
+            int quantity = Integer.parseInt(scanner.nextLine().trim());
+            if (quantity < 1 || quantity > 5) {
+                System.out.println("Invalid quantity. Setting to 1.");
+                quantity = 1;
+            }
+            return item + " x" + quantity;
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Setting to 1.");
+            return item + " x1";
+        }
+    }
+
+    private String updateEquipment(String currentEquipment) {
+        System.out.println("\n========== UPDATE EQUIPMENT ==========");
+        System.out.println("Current equipment: " + currentEquipment);
+        
+        List<String> equipmentList = new ArrayList<>();
+        if (currentEquipment != null && !currentEquipment.isBlank()) {
+            String[] items = currentEquipment.split(", ");
+            for (String item : items) {
+                equipmentList.add(item.trim());
+            }
+        }
+        
+        while (true) {
+            System.out.println("\n--- Equipment Management ---");
+            if (!equipmentList.isEmpty()) {
+                System.out.println("Current equipment:");
+                for (int i = 0; i < equipmentList.size(); i++) {
+                    System.out.println((i + 1) + ". " + equipmentList.get(i));
+                }
+            } else {
+                System.out.println("No equipment currently assigned.");
+            }
+            System.out.println("5. Add new equipment");
+            System.out.println("6. Keep same");
+            System.out.print("Enter your choice: ");
+            
+            int choice = readMenuChoice(1, 6);
+            if (choice == -1) continue;
+            
+            switch (choice) {
+                case 5:
+                    // Add new equipment
+                    addNewEquipmentToList(equipmentList);
+                    break;
+                case 6:
+                    // Keep same
+                    return currentEquipment;
+                default:
+                    // Modify existing equipment (1-4 or higher if more items)
+                    if (choice > 0 && choice <= equipmentList.size()) {
+                        modifyEquipment(equipmentList, choice - 1);
+                    } else {
+                        System.out.println("Invalid choice.");
+                    }
+            }
+            
+            // Check if user wants to finish
+            if (askToDone()) {
+                if (equipmentList.isEmpty()) {
+                    return "Other";
+                }
+                return String.join(", ", equipmentList);
+            }
+        }
+    }
+
+    private void addNewEquipmentToList(List<String> equipmentList) {
+        System.out.println("\nAdd Equipment:");
+        System.out.println("1. Projector");
+        System.out.println("2. Computer");
+        System.out.println("3. Charging Port");
+        System.out.println("4. Other");
+        System.out.print("Select equipment type: ");
+        
+        int choice = readMenuChoice(1, 4);
+        if (choice == -1) return;
+        
+        String equipment = "";
         switch (choice) {
             case 1:
-                System.out.println("\n[View All Facilities]");
-                System.out.println("Feature coming soon.");
+                equipment = selectQuantity("Projector");
                 break;
             case 2:
-                System.out.println("\n[Add New Facility]");
-                System.out.println("Feature coming soon.");
+                equipment = selectQuantity("Computer");
                 break;
             case 3:
-                System.out.println("\n[Update Facility]");
-                System.out.println("Feature coming soon.");
+                equipment = selectQuantity("Charging Port");
                 break;
             case 4:
-                System.out.println("\n[Delete Facility]");
-                System.out.println("Feature coming soon.");
-                break;
-            case 0:
+                System.out.print("Enter custom equipment name: ");
+                String customName = scanner.nextLine().trim();
+                if (customName.isEmpty()) {
+                    customName = "Other";
+                }
+                equipment = selectQuantity(customName);
                 break;
         }
+        
+        if (!equipmentList.contains(equipment)) {
+            equipmentList.add(equipment);
+            System.out.println(ConsoleColors.success("Added: " + equipment));
+        } else {
+            System.out.println(ConsoleColors.error("Equipment already exists."));
+        }
+    }
+
+    private void modifyEquipment(List<String> equipmentList, int index) {
+        String currentEquip = equipmentList.get(index);
+        System.out.println("\nModify: " + currentEquip);
+        System.out.println("1. Change quantity");
+        System.out.println("2. Delete");
+        System.out.print("Select action: ");
+        
+        int choice = readMenuChoice(1, 2);
+        if (choice == -1) return;
+        
+        if (choice == 1) {
+            // Extract equipment name and change quantity
+            String[] parts = currentEquip.split(" x");
+            if (parts.length == 2) {
+                String name = parts[0].trim();
+                String newEquip = selectQuantity(name);
+                equipmentList.set(index, newEquip);
+                System.out.println(ConsoleColors.success("Updated to: " + newEquip));
+            }
+        } else if (choice == 2) {
+            equipmentList.remove(index);
+            System.out.println(ConsoleColors.success("Deleted: " + currentEquip));
+        }
+    }
+
+    private boolean askToDone() {
+        System.out.print("Done with equipment? (y/n): ");
+        String response = scanner.nextLine().trim().toLowerCase();
+        return response.equals("y") || response.equals("yes");
+    }
+
+    private String[] parseLocation(String location) {
+        // Location format: "Block A, Floor 1, Room 1"
+        String[] parts = location.split(", ");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid location format");
+        }
+        
+        String block = parts[0].replace("Block ", "").trim();
+        String floor = parts[1].replace("Floor ", "").trim();
+        String room = parts[2].replace("Room ", "").trim();
+        
+        return new String[]{block, floor, room};
     }
 
     private void printStaffMenu() {

@@ -4,11 +4,10 @@ import adt.ArrayListADT;
 import adt.ListInterface;
 import entity.Booking;
 import entity.Room;
-import util.BookingInputValidator;
-import util.BookingDateTimeComparator;
-
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import util.BookingDateTimeComparator;
+import util.BookingInputValidator;
 
 public class BookingControl {
 
@@ -235,15 +234,16 @@ public class BookingControl {
     }
 
     public void displayRooms() {
-        int len = facilityControl.getRoomsLength();
+        ListInterface<Room> bookableRooms = facilityControl.getBookableRooms();
+        int len = bookableRooms.getLength();
         if (len == 0) {
-            System.out.println("No rooms in the system.");
+            System.out.println("No rooms available for booking.");
             return;
         }
-        System.out.println("\n--- All rooms ---");
+        System.out.println("\n--- Available rooms ---");
         System.out.println("Room ID | Location | Capacity");
         for (int i = 1; i <= len; i++) {
-            System.out.println(facilityControl.getRoomAt(i));
+            System.out.println(bookableRooms.getEntry(i));
         }
     }
 
@@ -253,9 +253,10 @@ public class BookingControl {
 
         System.out.println("\n--- Rooms available for this date & time ---");
         int shown = 0;
-        int len = facilityControl.getRoomsLength();
+        ListInterface<Room> bookableRooms = facilityControl.getBookableRooms();
+        int len = bookableRooms.getLength();
         for (int i = 1; i <= len; i++) {
-            Room room = facilityControl.getRoomAt(i);
+            Room room = bookableRooms.getEntry(i);
             boolean isBooked = false;
             for (int j = 1; j <= bookingList.getLength(); j++) {
                 Booking b = bookingList.getEntry(j);

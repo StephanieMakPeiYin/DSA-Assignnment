@@ -1,0 +1,2 @@
+A101|Discussion Room|10|Block A, Floor 1, Room 1|Projector
+B210|Discussion Room|20|Block B, Floor 2, Room 10|Computer x3

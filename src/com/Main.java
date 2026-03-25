@@ -33,6 +33,7 @@ public class Main {
             if (authControl.isStaff()) {
                 StaffUI staffUI = new StaffUI(userControl, bookingControl, facilityControl);
                 staffUI.start();
+                facilityControl.saveFacilitiesToFile();
             } else if (authControl.isStudent()) {
                 StudentUI studentUI = new StudentUI(facilityControl);
                 studentUI.start();

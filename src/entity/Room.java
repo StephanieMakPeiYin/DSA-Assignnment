@@ -2,24 +2,29 @@ package entity;
 
 public class Room {
     private String roomID;
-    private String name; // Optional display name (can be merged into location by controllers)
+    private String name;
     private int capacity;
     private String location;
+    private String equipment;
+    private boolean isDeleted = false;
+    private long deletionTime = 0;
 
     // Matches how BookingControl creates rooms: new Room(roomID, location, capacity)
     public Room(String roomID, String location, int capacity) {
         this.roomID = roomID;
         this.location = location;
         this.capacity = capacity;
-        this.name = "";
+        this.name = "Discussion Room";
+        this.equipment = "Other";
     }
 
     // Convenience constructor if other modules want to store a separate name
-    public Room(String roomID, String name, int capacity, String location) {
+    public Room(String roomID, String name, int capacity, String location, String equipment) {
         this.roomID = roomID;
         this.name = name;
         this.capacity = capacity;
         this.location = location;
+        this.equipment = equipment;
     }
 
     public String getRoomID() {
@@ -54,10 +59,42 @@ public class Room {
         this.location = location;
     }
 
+    public String getEquipment() {
+        return equipment;
+    }
+
+    public void setEquipment(String equipment) {
+        this.equipment = equipment;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+        if (deleted) {
+            deletionTime = System.currentTimeMillis() + 3L * 24 * 60 * 60 * 1000; // 3 days
+        }
+    }
+
+    public long getDeletionTime() {
+        return deletionTime;
+    }
+
+    public boolean isBookable() {
+        return !isDeleted;
+    }
+
+    public boolean shouldBeDeleted() {
+        return isDeleted && System.currentTimeMillis() > deletionTime;
+    }
+
     @Override
     public String toString() {
         String namePart = (name == null || name.trim().isEmpty()) ? "" : (name.trim() + " - ");
-        return roomID + " | " + namePart + location + " | Capacity: " + capacity;
+        String equipmentPart = (equipment == null || equipment.trim().isEmpty()) ? "Other" : equipment.trim();
+        return roomID + " | " + namePart + location + " | Capacity: " + capacity + " | Equipment: " + equipmentPart;
     }
 }
 
