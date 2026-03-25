@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserFileManager {
-    private static final String USER_FILE = "users.txt";
+    private static final String USER_FILE = "src/users.txt";
     private static final String DELIMITER = "|";
 
     /**

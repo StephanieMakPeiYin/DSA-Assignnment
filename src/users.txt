@@ -3,3 +3,5 @@ STU001|YongKean|yk@gmail.com|12345|STUDENT|active
 STU002|WX|wx@gmail.com|12345|STUDENT|active
 STU003|yk|yk1@gmail.com|12345|STUDENT|active
 STU004|yk|yk2@gmail.com|12345|STUDENT|active
+STA002|ln|ln@gmail.com|12345|STAFF|active
+STU005|st|st@gmail.com|12345|STUDENT|active
