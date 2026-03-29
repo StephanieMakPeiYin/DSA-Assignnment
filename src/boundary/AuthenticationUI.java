@@ -29,8 +29,6 @@ public class AuthenticationUI {
                 case 0:
                     System.out.println("\nExiting system. Thank you!");
                     return false;
-                default:
-                    System.out.println("\nInvalid choice. Please try again.");
             }
 
             if (authControl.getCurrentUser() != null) {
@@ -106,12 +104,12 @@ public class AuthenticationUI {
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
             if (choice < min || choice > max) {
-                System.out.println("Invalid input. Please enter a number between " + min + " and " + max + ".");
+                System.out.println(ConsoleColors.error("[ERROR] Invalid input. Please enter a number between " + min + " and " + max + "."));
                 return -1;
             }
             return choice;
         } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a valid number.");
+            System.out.println(ConsoleColors.error("[ERROR] Invalid input. Please enter a valid number."));
             return -1;
         }
     }

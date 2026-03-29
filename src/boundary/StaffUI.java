@@ -48,19 +48,20 @@ public class StaffUI {
         } while (true);
     }
 
+    // --- Staff Menu ---
     private void manageUsers() {
         int choice;
         do {
             System.out.println("\n========== MANAGE USERS ==========");
             System.out.println("1. Add new user");
             System.out.println("2. Update user information");
-            System.out.println("3. Delete user");
+            System.out.println("3. Remove user");
             System.out.println("4. Search user");
             System.out.println("5. View all users");
-            System.out.println("0. Back to menu");
-            System.out.print("Enter your choice: ");
+            System.out.println("6. Recover deleted user");
+            System.out.print("Enter your choice (0 to exit): ");
 
-            choice = readMenuChoice(0, 5);
+            choice = readMenuChoice(0, 6);
 
             switch (choice) {
                 case 1:
@@ -78,64 +79,97 @@ public class StaffUI {
                 case 5:
                     viewAllUsers();
                     break;
+                case 6:
+                    recoverUser();
+                    break;
                 case 0:
                     return;
-                default:
-                    System.out.println("\nInvalid choice. Please try again.");
             }
         } while (true);
     }
 
+    // --- View All Users ---
     private void viewAllUsers() {
         System.out.println("\n========== VIEW ALL USERS ==========");
         java.util.List<entity.User> users = userControl.getAllUsers();
         
-        // Filter out staff account and deleted users
+        // Filter out staff account, separate active and removed users
         java.util.List<entity.User> activeUsers = new java.util.ArrayList<>();
+        java.util.List<entity.User> removedUsers = new java.util.ArrayList<>();
+        
         for (entity.User user : users) {
-            if (!user.getEmail().equals("staff@gmail.com") && "active".equals(user.getStatus())) {
-                activeUsers.add(user);
+            if (!user.getEmail().equals("staff@gmail.com")) {
+                if ("active".equals(user.getStatus())) {
+                    activeUsers.add(user);
+                } else if ("removed".equals(user.getStatus())) {
+                    removedUsers.add(user);
+                }
             }
         }
         
-        if (activeUsers.isEmpty()) {
-            System.out.println("No active users found in the system.");
+        if (activeUsers.isEmpty() && removedUsers.isEmpty()) {
+            System.out.println("No users found in the system.");
             return;
         }
         
-        System.out.println(String.format("\nTotal Active Users: %d\n", activeUsers.size()));
-        System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
-        System.out.println("-".repeat(70));
+        // Display active users
+        if (!activeUsers.isEmpty()) {
+            System.out.println(String.format("\n--- ACTIVE USERS (%d) ---\n", activeUsers.size()));
+            System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", "User ID", "Name", "Email", "User Type", "Status"));
+            System.out.println("-".repeat(80));
+            
+            for (entity.User user : activeUsers) {
+                System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", 
+                    user.getUserID(), user.getName(), user.getEmail(), user.getUserType(), user.getStatus()));
+            }
+        }
         
-        for (entity.User user : activeUsers) {
-            System.out.println(String.format("%-10s %-20s %-25s %-12s", 
-                user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
+        // Display removed users if exist
+        if (!removedUsers.isEmpty()) {
+            System.out.println(String.format("\n--- REMOVED USERS (%d) ---\n", removedUsers.size()));
+            System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", "User ID", "Name", "Email", "User Type", "Status"));
+            System.out.println("-".repeat(80));
+            
+            for (entity.User user : removedUsers) {
+                System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", 
+                    user.getUserID(), user.getName(), user.getEmail(), user.getUserType(), user.getStatus()));
+            }
         }
     }
 
+    // --- Search User ---
     private void searchUser() {
-        System.out.println("\n========== SEARCH USER ==========");
-        System.out.println("Search by:");
-        System.out.println("1. User ID");
-        System.out.println("2. Name");
-        System.out.println("3. Email");
-        System.out.print("Enter your choice (1-3): ");
-        
-        int choice = readMenuChoice(1, 3);
-        
-        switch (choice) {
-            case 1:
-                searchByUserID();
-                break;
-            case 2:
-                searchByName();
-                break;
-            case 3:
-                searchByEmail();
-                break;
-            default:
-                System.out.println("\nInvalid choice.");
-        }
+        int choice;
+        do {
+            System.out.println("\n========== SEARCH USER ==========");
+            System.out.println("Search by:");
+            System.out.println("1. User ID");
+            System.out.println("2. Name");
+            System.out.println("3. Email");
+            System.out.print("Enter your choice (0 to exit): ");
+            
+            choice = readMenuChoice(0, 3);
+            
+            if (choice == -1) {
+                continue;
+            }
+            
+            switch (choice) {
+                case 1:
+                    searchByUserID();
+                    break;
+                case 2:
+                    searchByName();
+                    break;
+                case 3:
+                    searchByEmail();
+                    break;
+                case 0:
+                    return;
+                default:
+                    System.out.println("\nInvalid choice.");
+            }
+        } while (true);
     }
 
     private void searchByUserID() {
@@ -219,93 +253,282 @@ public class StaffUI {
         System.out.println("Status: " + user.getStatus());
     }
 
+    // --- Remove User ---
     private void deleteUser() {
-        System.out.println("\n========== DELETE USER ==========");
-        System.out.print("Enter email to delete: ");
-        String email = scanner.nextLine().trim();
-        
-        if (email.isEmpty()) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
-            return;
-        }
-        
-        // Prevent deleting staff account
-        if (email.equals("staff@gmail.com")) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Cannot delete default staff account."));
-            return;
-        }
-        
-        entity.User userToDelete = userControl.findUserByEmail(email);
-        if (userToDelete == null) {
-            System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
-            return;
-        }
-        
-        System.out.println("\nUser to delete:");
-        System.out.println("Name: " + userToDelete.getName());
-        System.out.println("Email: " + userToDelete.getEmail());
-        System.out.println("User Type: " + userToDelete.getUserType());
-        
-        System.out.print("\nAre you sure you want to delete this user? (yes/no): ");
-        String confirmation = scanner.nextLine().trim().toLowerCase();
-        
-        if (!confirmation.equals("yes")) {
-            System.out.println("\nDeletion cancelled.");
-            return;
-        }
-        
-        boolean deleted = userControl.deleteUser(email);
-        if (deleted) {
-            System.out.println(ConsoleColors.success("\n[SUCCESS] User deleted successfully."));
-        } else {
-            System.out.println(ConsoleColors.error("\n[ERROR] Failed to delete user."));
+        while (true) {
+            System.out.println("\n========== REMOVE USER ==========");
+            System.out.print("Enter email to remove (e.g. user@gmail.com) (0 to exit): ");
+            String email = scanner.nextLine().trim();
+            
+            if (email.equals("0")) {
+                System.out.println("Cancelled user removal.");
+                return;
+            }
+            
+            if (email.isEmpty()) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
+                continue;
+            }
+            
+            // Prevent removing staff account
+            if (email.equals("staff@gmail.com")) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Cannot remove default staff account."));
+                continue;
+            }
+            
+            entity.User userToDelete = userControl.findUserByEmail(email);
+            if (userToDelete == null) {
+                System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
+                continue;
+            }
+            
+            if ("removed".equals(userToDelete.getStatus())) {
+                System.out.println(ConsoleColors.error("\n[ERROR] This user is already removed."));
+                continue;
+            }
+            
+            System.out.println("\nUser to remove:");
+            System.out.println("Name: " + userToDelete.getName());
+            System.out.println("Email: " + userToDelete.getEmail());
+            System.out.println("User Type: " + userToDelete.getUserType());
+            
+            while (true) {
+                System.out.println("\nConfirm removal:");
+                System.out.println("[1] Yes, remove this user");
+                System.out.println("[2] No, cancel removal");
+                System.out.print("Enter your choice: ");
+                String confirmation = scanner.nextLine().trim();
+                
+                if (confirmation.equals("1")) {
+                    boolean deleted = userControl.deleteUser(email);
+                    if (deleted) {
+                        System.out.println(ConsoleColors.success("\n[SUCCESS] User removed successfully."));
+                    } else {
+                        System.out.println(ConsoleColors.error("\n[ERROR] Failed to remove user."));
+                    }
+                    return;
+                } else if (confirmation.equals("2")) {
+                    System.out.println("\nDeletion cancelled.");
+                    break;
+                } else {
+                    System.out.println(ConsoleColors.error("\n[ERROR] Invalid choice. Enter 1 or 2."));
+                }
+            }
         }
     }
 
+    // --- Recover Deleted User ---
+    private void recoverUser() {
+
+        java.util.List<entity.User> allUsers = userControl.getAllUsers();
+        
+        java.util.List<entity.User> deletedUsers = new java.util.ArrayList<>();
+        for (entity.User user : allUsers) {
+            if ("removed".equals(user.getStatus())) {
+                deletedUsers.add(user);
+            }
+        }
+        
+        if (deletedUsers.isEmpty()) {
+            System.out.println("\nNo deleted users found in the system.");
+            return;
+        }
+        
+        int choice;
+        
+        do {
+            System.out.println("\n========== RECOVER DELETED USER ==========");
+            System.out.println("[1] View all deleted users");
+            System.out.println("[2] Recover a deleted user");
+            System.out.println("[0] Back to menu");
+            System.out.print("Enter your choice: ");
+
+            choice = readMenuChoice(0, 2);
+
+            switch (choice) {
+                case 1:
+                    viewDeletedUsers();
+                    break;
+                case 2:
+                    performRecoverUser();
+                    break;
+                case 0:
+                    return;
+                default:
+                    System.out.println("\nInvalid choice. Please try again.");
+            }
+        } while (true);
+    }
+
+    private void viewDeletedUsers() {
+        System.out.println("\n========== ALL DELETED USERS ==========");
+        java.util.List<entity.User> allUsers = userControl.getAllUsers();
+        
+        java.util.List<entity.User> deletedUsers = new java.util.ArrayList<>();
+        for (entity.User user : allUsers) {
+            if ("removed".equals(user.getStatus())) {
+                deletedUsers.add(user);
+            }
+        }
+        
+        if (deletedUsers.isEmpty()) {
+            System.out.println("\nNo deleted users found in the system.");
+            return;
+        }
+        
+        System.out.println(String.format("\nTotal Deleted Users: %d\n", deletedUsers.size()));
+        System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
+        System.out.println("-".repeat(70));
+        
+        for (entity.User user : deletedUsers) {
+            System.out.println(String.format("%-10s %-20s %-25s %-12s", 
+                user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
+        }
+    }
+
+    private void performRecoverUser() {
+        while (true) {
+            System.out.println("\n========== RECOVER DELETED USER ==========");
+            System.out.print("Enter email of deleted user to recover (e.g. user@gmail.com) (0 to exit): ");
+            String email = scanner.nextLine().trim();
+            
+            if (email.equals("0")) {
+                System.out.println("Cancelled user recovery.");
+                return;
+            }
+            
+            if (email.isEmpty()) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
+                continue;
+            }
+            
+            entity.User userToRecover = userControl.findUserByEmail(email);
+            if (userToRecover == null) {
+                System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
+                continue;
+            }
+            
+            if ("active".equals(userToRecover.getStatus())) {
+                System.out.println(ConsoleColors.error("\n[ERROR] This user is already active, not deleted."));
+                continue;
+            }
+            
+            if (!"removed".equals(userToRecover.getStatus())) {
+                System.out.println(ConsoleColors.error("\n[ERROR] This user does not have a 'removed' status."));
+                continue;
+            }
+            
+            System.out.println("\nUser to recover:");
+            System.out.println("Name: " + userToRecover.getName());
+            System.out.println("Email: " + userToRecover.getEmail());
+            System.out.println("User Type: " + userToRecover.getUserType());
+            System.out.println("Current Status: " + userToRecover.getStatus());
+            
+            while (true) {
+                System.out.println("\nConfirm recovery:");
+                System.out.println("[1] Yes, recover this user");
+                System.out.println("[2] No, cancel recovery");
+                System.out.print("Enter your choice: ");
+                String confirmation = scanner.nextLine().trim();
+                
+                if (confirmation.equals("1")) {
+                    entity.User recoveredUser = new entity.User(userToRecover.getUserID(), userToRecover.getName(), 
+                        userToRecover.getEmail(), userToRecover.getPassword(), userToRecover.getUserType(), "active");
+                    boolean recovered = userControl.updateUser(recoveredUser);
+                    
+                    if (recovered) {
+                        System.out.println(ConsoleColors.success("\n[SUCCESS] User recovered successfully!"));
+                        System.out.println("Status changed to: active");
+                    } else {
+                        System.out.println(ConsoleColors.error("\n[ERROR] Failed to recover user."));
+                    }
+                    return;
+                } else if (confirmation.equals("2")) {
+                    System.out.println("\nRecovery cancelled.");
+                    break;
+                } else {
+                    System.out.println(ConsoleColors.error("\n[ERROR] Invalid choice. Enter 1 or 2."));
+                }
+            }
+        }
+    }
+
+    // --- Add New User ---
     private void addNewUser() {
-        System.out.println("\n========== ADD NEW USER ==========");
-        System.out.print("Enter name: ");
-        String name = scanner.nextLine().trim();
-        
-        if (name.isEmpty()) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Name cannot be empty."));
-            return;
+        System.out.println("\n========== ADD NEW USER ==========\n");
+        System.out.println("(Enter 0 at any prompt to CANCEL)\n");
+
+        String name;
+        while (true) {
+            System.out.print("Enter name (no spaces): ");
+            name = scanner.nextLine().trim();
+            if (name.equals("0")) {
+                System.out.println("Cancelled user creation.");
+                return;
+            }
+            if (!isValidName(name)) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Name must be 1-20 characters and contain no spaces."));
+            } else {
+                break;
+            }
         }
-        
-        System.out.print("Enter email (format: username@gmail.com): ");
-        String email = scanner.nextLine().trim();
-        
-        if (email.isEmpty()) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
-            return;
+
+        String email;
+        while (true) {
+            System.out.print("Enter email username (without @gmail.com): ");
+            String emailLocal = scanner.nextLine().trim();
+            if (emailLocal.equals("0")) {
+                System.out.println("Cancelled user creation.");
+                return;
+            }
+            if (emailLocal.isEmpty() || emailLocal.contains(" ") || emailLocal.contains("@")) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Email username cannot be empty, contain spaces, or '@'."));
+            } else {
+                email = emailLocal + "@gmail.com";
+                if (userControl.findUserByEmail(email) != null) {
+                    System.out.println(ConsoleColors.error("\n[ERROR] Email already exists in the system: " + email));
+                } else {
+                    break;
+                }
+            }
         }
-        
-        if (!email.endsWith("@gmail.com")) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Email must be in format: username@gmail.com"));
-            return;
+
+        String password;
+        while (true) {
+            System.out.print("Enter password (at least 5 chars with digit): ");
+            password = scanner.nextLine();
+            if (password.equals("0")) {
+                System.out.println("Cancelled user creation.");
+                return;
+            }
+            if (!isValidPassword(password)) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 5 chars and contain at least one digit."));
+            } else {
+                break;
+            }
         }
-        
-        if (userControl.findUserByEmail(email) != null) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Email already exists in the system."));
-            return;
+
+        String userType;
+        while (true) {
+            System.out.println("Select user type:");
+            System.out.println("[1] STAFF\n[2] STUDENT\n[0] cancel");
+            System.out.print("Enter choice: ");
+            String typeChoice = scanner.nextLine().trim();
+            if (typeChoice.equals("0")) {
+                System.out.println("Cancelled user creation.");
+                return;
+            }
+            if (typeChoice.equals("1")) {
+                userType = "STAFF";
+                break;
+            } else if (typeChoice.equals("2")) {
+                userType = "STUDENT";
+                break;
+            } else {
+                System.out.println(ConsoleColors.error("\n[ERROR] Invalid user type. Choose 1 for STAFF or 2 for STUDENT."));
+            }
         }
-        
-        System.out.print("Enter password (minimum 4 characters): ");
-        String password = scanner.nextLine();
-        
-        if (password.length() < 4) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 4 characters."));
-            return;
-        }
-        
-        System.out.print("Enter user type (STAFF/STUDENT): ");
-        String userType = scanner.nextLine().trim().toUpperCase();
-        
-        if (!userType.equals("STAFF") && !userType.equals("STUDENT")) {
-            System.out.println(ConsoleColors.error("\n[ERROR] User type must be STAFF or STUDENT."));
-            return;
-        }
-        
+
         entity.User newUser = new entity.User(null, name, email, password, userType);
         userControl.addUser(newUser);
         System.out.println(ConsoleColors.success("\n[SUCCESS] New user added successfully!"));
@@ -315,63 +538,109 @@ public class StaffUI {
         System.out.println("User Type: " + userType);
     }
 
+    // --- Update User Information ---
     private void updateUserInformation() {
-        System.out.println("\n========== UPDATE USER INFORMATION ==========");
-        System.out.print("Enter email of user to update: ");
+        System.out.println("\n========== UPDATE USER INFORMATION ==========\n");
+        System.out.println("(Enter 0 at any prompt to CANCEL)\n");
+        System.out.print("Enter email to update (e.g. users@gmail.com): ");
         String email = scanner.nextLine().trim();
-        
+
+        if (email.equals("0")) {
+            System.out.println("Cancelled user update.");
+            return;
+        }
+
         if (email.isEmpty()) {
             System.out.println(ConsoleColors.error("\n[ERROR] Email cannot be empty."));
             return;
         }
-        
+
         entity.User existingUser = userControl.findUserByEmail(email);
         if (existingUser == null || "removed".equals(existingUser.getStatus())) {
             System.out.println(ConsoleColors.error("\n[ERROR] User not found with email: " + email));
             return;
         }
-        
+
         if (existingUser.getEmail().equals("staff@gmail.com")) {
             System.out.println(ConsoleColors.error("\n[ERROR] Cannot modify the default staff account."));
             return;
         }
-        
+
         System.out.println("\n========== CURRENT USER DETAILS ==========");
         System.out.println("User ID: " + existingUser.getUserID());
         System.out.println("Name: " + existingUser.getName());
         System.out.println("Email: " + existingUser.getEmail());
         System.out.println("User Type: " + existingUser.getUserType());
         System.out.println("Status: " + existingUser.getStatus());
-        
-        System.out.println("\n--- Enter new information (press Enter to keep current) ---");
-        
-        System.out.print("New name [" + existingUser.getName() + "]: ");
-        String newName = scanner.nextLine().trim();
-        if (newName.isEmpty()) {
-            newName = existingUser.getName();
+
+        System.out.println("\n--- Enter new information (press ENTER to keep current or 0 to CANCEL) ---\n");
+
+        String newName;
+        while (true) {
+            System.out.print("New name [Current name: " + existingUser.getName() + "]: ");
+            newName = scanner.nextLine().trim();
+            if (newName.equals("0")) {
+                System.out.println("Cancelled user update.");
+                return;
+            }
+            if (newName.isEmpty()) {
+                newName = existingUser.getName();
+                break;
+            }
+            if (!isValidName(newName)) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Name must be 1-20 characters and contain no spaces."));
+                continue;
+            }
+            break;
         }
-        
-        System.out.print("New password (minimum 4 characters) [keep current]: ");
-        String newPassword = scanner.nextLine();
-        if (newPassword.isEmpty()) {
-            newPassword = existingUser.getPassword();
-        } else if (newPassword.length() < 4) {
-            System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 4 characters."));
-            return;
+
+        String newPassword;
+        while (true) {
+            System.out.print("New password (at least 5 chars with digit): ");
+            newPassword = scanner.nextLine();
+            if (newPassword.equals("0")) {
+                System.out.println("Cancelled user update.");
+                return;
+            }
+            if (newPassword.isEmpty()) {
+                newPassword = existingUser.getPassword();
+                break;
+            }
+            if (!isValidPassword(newPassword)) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 5 chars and include at least one number."));
+                continue;
+            }
+            break;
         }
-        
-        System.out.print("New user type (STAFF/STUDENT) [" + existingUser.getUserType() + "]: ");
-        String newUserType = scanner.nextLine().trim().toUpperCase();
-        if (newUserType.isEmpty()) {
-            newUserType = existingUser.getUserType();
-        } else if (!newUserType.equals("STAFF") && !newUserType.equals("STUDENT")) {
-            System.out.println(ConsoleColors.error("\n[ERROR] User type must be STAFF or STUDENT."));
-            return;
+
+        String newUserType;
+        while (true) {
+            System.out.println("Select user type:");
+            System.out.println("[1] STAFF\n[2] STUDENT\n[0] cancel");
+            System.out.print("Enter choice: ");
+            String userTypeChoice = scanner.nextLine().trim();
+            if (userTypeChoice.equals("0")) {
+                System.out.println("Cancelled user update.");
+                return;
+            }
+            if (userTypeChoice.isEmpty()) {
+                newUserType = existingUser.getUserType();
+                break;
+            }
+            if (userTypeChoice.equals("1")) {
+                newUserType = "STAFF";
+                break;
+            } else if (userTypeChoice.equals("2")) {
+                newUserType = "STUDENT";
+                break;
+            } else {
+                System.out.println(ConsoleColors.error("\n[ERROR] Invalid user type choice."));
+            }
         }
-        
+
         entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, existingUser.getEmail(), newPassword, newUserType, existingUser.getStatus());
         boolean success = userControl.updateUser(updatedUser);
-        
+
         if (success) {
             System.out.println(ConsoleColors.success("\n[SUCCESS] User information updated successfully!"));
             System.out.println("Name: " + newName);
@@ -862,6 +1131,17 @@ public class StaffUI {
         return new String[]{block, floor, room};
     }
 
+    private boolean isValidName(String name) {
+        return name != null && !name.isEmpty() && name.length() <= 20 && !name.contains(" ");
+    }
+
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 5) {
+            return false;
+        }
+        return password.chars().anyMatch(Character::isDigit);
+    }
+
     private void printStaffMenu() {
         System.out.println("\n╔═══════════════════════╗");
         System.out.println("║      STAFF PAGE       ║");
@@ -877,12 +1157,12 @@ public class StaffUI {
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
             if (choice < min || choice > max) {
-                System.out.println("Invalid input. Please enter a number between " + min + " and " + max + ".");
+                System.out.println(ConsoleColors.error("[ERROR] Invalid input. Please enter a number between " + min + " and " + max + "."));
                 return -1;
             }
             return choice;
         } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a valid number.");
+            System.out.println(ConsoleColors.error("[ERROR] Invalid input. Please enter a valid number."));
             return -1;
         }
     }
