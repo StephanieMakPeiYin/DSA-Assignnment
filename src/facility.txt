@@ -1,2 +1,30 @@
 A101|Discussion Room|10|Block A, Floor 1, Room 1|Projector
-B210|Discussion Room|20|Block B, Floor 2, Room 10|Computer x3
+A102|Discussion Room|12|Block A, Floor 1, Room 2|Whiteboard
+A103|Discussion Room|15|Block A, Floor 1, Room 3|Projector
+A104|Discussion Room|20|Block A, Floor 1, Room 4|Smart TV
+A105|Discussion Room|18|Block A, Floor 1, Room 5|Conference Phone
+A106|Discussion Room|22|Block A, Floor 2, Room 1|Computer x2
+A107|Discussion Room|25|Block A, Floor 2, Room 2|Video Conferencing
+A108|Discussion Room|16|Block A, Floor 2, Room 3|Projector
+A109|Discussion Room|14|Block A, Floor 2, Room 4|Whiteboard
+A110|Discussion Room|30|Block A, Floor 2, Room 5|Computer x4
+B201|Discussion Room|20|Block B, Floor 2, Room 1|Computer x3
+B202|Discussion Room|18|Block B, Floor 2, Room 2|Projector
+B203|Discussion Room|12|Block B, Floor 2, Room 3|Whiteboard
+B204|Discussion Room|22|Block B, Floor 2, Room 4|Smart TV
+B205|Discussion Room|28|Block B, Floor 2, Room 5|Conference Phone
+B206|Discussion Room|24|Block B, Floor 3, Room 1|Computer x4
+B207|Discussion Room|30|Block B, Floor 3, Room 2|Projector
+B208|Discussion Room|26|Block B, Floor 3, Room 3|Video Conferencing
+B209|Discussion Room|20|Block B, Floor 3, Room 4|Projector
+B210|Discussion Room|20|Block B, Floor 3, Room 5|Computer x3
+C301|Discussion Room|14|Block C, Floor 3, Room 1|Whiteboard
+C302|Discussion Room|18|Block C, Floor 3, Room 2|Projector
+C303|Discussion Room|16|Block C, Floor 3, Room 3|Smart TV
+C304|Discussion Room|22|Block C, Floor 3, Room 4|Conference Phone
+C305|Discussion Room|24|Block C, Floor 3, Room 5|Computer x3
+C306|Discussion Room|20|Block C, Floor 4, Room 1|Projector
+C307|Discussion Room|26|Block C, Floor 4, Room 2|Whiteboard
+C308|Discussion Room|28|Block C, Floor 4, Room 3|Computer x5
+C309|Discussion Room|32|Block C, Floor 4, Room 4|Video Conferencing
+C310|Discussion Room|30|Block C, Floor 4, Room 5|Projector
