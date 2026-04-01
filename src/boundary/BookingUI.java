@@ -12,13 +12,25 @@ public class BookingUI {
 
     private final BookingControl control;
     private final Scanner scanner = new Scanner(System.in);
+    private final String studentName;
+    private final String studentEmail;
 
     public BookingUI() {
-        this(new FacilityControl());
+        this(new FacilityControl(), "Unknown", "unknown@email.com");
     }
 
     public BookingUI(FacilityControl facilityControl) {
-        this.control = new BookingControl(facilityControl);
+        this(new BookingControl(facilityControl), "Unknown", "unknown@email.com");
+    }
+
+    public BookingUI(BookingControl bookingControl, String studentName, String studentEmail) {
+        this.control = bookingControl;
+        this.studentName = studentName == null ? "Unknown" : studentName;
+        this.studentEmail = studentEmail == null ? "unknown@email.com" : studentEmail;
+    }
+
+    public BookingUI(FacilityControl facilityControl, String studentName, String studentEmail) {
+        this(new BookingControl(facilityControl), studentName, studentEmail);
     }
 
     public void start() {
@@ -52,7 +64,7 @@ public class BookingUI {
         do {
             System.out.println("\n--- Rooms ---");
             System.out.println("1. View all rooms");
-            System.out.println("2. Filter available rooms (by date & time)");
+            System.out.println("2. Sort rooms (by location & capacity)");
             System.out.println("0. Back");
             sub = readMenuChoice(0, 2);
             switch (sub) {
@@ -60,10 +72,125 @@ public class BookingUI {
                     control.displayRooms();
                     pause();
                 }
-                case 2 -> filterAvailableRooms();
+                case 2 -> viewSortedRoomsAndAvailability();
                 case 0 -> { /* back */ }
             }
         } while (sub != 0);
+    }
+
+    /**
+     * Displays sorted rooms by selected block and capacity, then asks if user wants to check availability.
+     */
+    private void viewSortedRoomsAndAvailability() {
+        // Step 1: Ask for block location
+        String block = readBlockSelection();
+
+        // Step 2: Ask for capacity range
+        int[] capacityRange = readCapacityRangeSelection();
+        int minCapacity = capacityRange[0];
+        int maxCapacity = capacityRange[1];
+
+        // Step 3: Display sorted rooms by block and capacity (with equipment)
+        control.displayRoomsByBlockAndCapacity(block, minCapacity, maxCapacity);
+
+        // Step 4: Ask if user wants to check availability
+        if (!readConfirmation("Do you want to view availability time & date for a room? (y/n): ")) {
+            System.out.println("Returning to menu...");
+            pause();
+            return;
+        }
+
+        // User wants to see availability - ask for room ID
+        String roomID = readExistingRoomId("Enter Room ID to view availability (e.g. A101): ");
+
+        // Ask for date
+        LocalDate date = readValidBookingDate("Enter date to check (yyyy-MM-dd e.g. 2026-03-25): ", false);
+        String isoDate = BookingInputValidator.formatDate(date);
+
+        // Display available slots
+        control.displayAvailableSlots(roomID, isoDate);
+        pause();
+    }
+
+    /**
+     * Reads block selection from user (A, B, or C).
+     */
+    private String readBlockSelection() {
+        while (true) {
+            System.out.println("\nSelect block location:");
+            System.out.println("1. Block A");
+            System.out.println("2. Block B");
+            System.out.println("3. Block C");
+            System.out.print("Enter choice (1-3): ");
+            try {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    System.out.println("Input cannot be empty. Try again.");
+                    continue;
+                }
+                int choice = Integer.parseInt(line);
+                switch (choice) {
+                    case 1 -> {
+                        System.out.println("Selected: Block A");
+                        return "A";
+                    }
+                    case 2 -> {
+                        System.out.println("Selected: Block B");
+                        return "B";
+                    }
+                    case 3 -> {
+                        System.out.println("Selected: Block C");
+                        return "C";
+                    }
+                    default -> System.out.println("Please enter a number between 1 and 3.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("That is not a valid number. Try again.");
+            }
+        }
+    }
+
+    /**
+     * Reads capacity range selection from user.
+     */
+    private int[] readCapacityRangeSelection() {
+        while (true) {
+            System.out.println("\nSelect capacity range:");
+            System.out.println("1. Small (10-15)");
+            System.out.println("2. Medium (16-22)");
+            System.out.println("3. Large (23-30)");
+            System.out.println("4. Extra Large (31+)");
+            System.out.print("Enter choice (1-4): ");
+            try {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    System.out.println("Input cannot be empty. Try again.");
+                    continue;
+                }
+                int choice = Integer.parseInt(line);
+                switch (choice) {
+                    case 1 -> {
+                        System.out.println("Selected: Small (10-15)");
+                        return new int[]{10, 15};
+                    }
+                    case 2 -> {
+                        System.out.println("Selected: Medium (16-22)");
+                        return new int[]{16, 22};
+                    }
+                    case 3 -> {
+                        System.out.println("Selected: Large (23-30)");
+                        return new int[]{23, 30};
+                    }
+                    case 4 -> {
+                        System.out.println("Selected: Extra Large (31+)");
+                        return new int[]{31, Integer.MAX_VALUE};
+                    }
+                    default -> System.out.println("Please enter a number between 1 and 4.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("That is not a valid number. Try again.");
+            }
+        }
     }
 
     private void bookingsSubMenu() {
@@ -116,30 +243,52 @@ public class BookingUI {
         }
     }
 
-    private void filterAvailableRooms() {
-        System.out.println("\n--- Filter available rooms ---");
-        System.out.println("Date must be " + BookingInputValidator.DATE_PATTERN + " (e.g. 2025-06-15).");
-        System.out.println("Time slot must be like 09:00-11:00 or 14:30-16:00 (24-hour, start before end).");
-
-        LocalDate date = readValidBookingDate("Date: ", true);
-        String timeSlot = readValidTimeSlot("Time slot: ");
-
-        String iso = BookingInputValidator.formatDate(date);
-        String normalizedTime = BookingInputValidator.normalizeTimeSlot(timeSlot);
-        control.filterAvailableRooms(iso, normalizedTime);
-        pause();
-    }
-
     private void bookRoom() {
-        System.out.println("\n--- New booking ---");
+        System.out.println("\n--- New Booking ---");
+        displayBookingPolicy();
 
-        control.displayRooms();
-        String roomID = readExistingRoomId("Room ID (e.g. A101): ");
+        // Step 1: Ask for date
+        LocalDate bookingDate = readValidBookingDate("Enter booking date (yyyy-MM-dd e.g. 2026-03-25): ", false);
+        String isoDate = BookingInputValidator.formatDate(bookingDate);
 
-        LocalDate date = readValidBookingDate("Date (yyyy-MM-dd e.g. 2026-03-25): ", false);
-        String timeSlot = readValidTimeSlot("Time slot (H:mm-H:mm e.g. 9:00-11:00): ");
+        // Step 2: Ask for capacity
+        int requiredCapacity = readCapacity("Enter required capacity: ");
 
-        int result = control.bookRoom(roomID, BookingInputValidator.formatDate(date), timeSlot);
+        // Step 3: Show rooms that can support that capacity (sorted)
+        control.displayRoomsByCapacity(requiredCapacity);
+
+        // Step 4: User picks Room ID
+        String roomID = readExistingRoomId("Enter Room ID to proceed (e.g. A101): ");
+
+        // Step 5: Show available time slots for that date
+        control.displayAvailableSlots(roomID, isoDate);
+
+        // Get available slots for validation
+        adt.ListInterface<String> availableSlots = control.getAvailableSlotsForRoom(roomID, isoDate);
+        if (availableSlots.getLength() == 0) {
+            System.out.println("No available time slots for this room on this date.");
+            pause();
+            return;
+        }
+
+        // Step 6: User selects a slot (can enter 1-5 or full slot format)
+        String selectedSlot = readSelectedSlot("Select a time slot by number (1-5) or full format (e.g. 09:00-11:00): ", availableSlots);
+
+        // Step 7: Confirm booking (show date, time, room id)
+        System.out.println("\n========== BOOKING CONFIRMATION ==========");
+        System.out.println("Room ID: " + roomID);
+        System.out.println("Date: " + isoDate);
+        System.out.println("Time: " + selectedSlot);
+        System.out.println("==========================================");
+
+        if (!readConfirmation("Confirm this booking? (y/n): ")) {
+            System.out.println("Booking cancelled.");
+            pause();
+            return;
+        }
+
+        // Proceed with booking
+        int result = control.bookRoom(roomID, isoDate, selectedSlot, studentName, studentEmail);
         switch (result) {
             case BookingControl.BOOK_OK ->
                 System.out.println(ConsoleColors.success("Booking successful. Your booking is saved as ACTIVE."));
@@ -157,6 +306,94 @@ public class BookingUI {
                 System.out.println("Could not complete booking.");
         }
         pause();
+    }
+
+    /**
+     * Displays the booking policy to users.
+     */
+    private void displayBookingPolicy() {
+        System.out.println("\n========== BOOKING POLICY ==========");
+        System.out.println("Bookings are only available for the next 3 days");
+        System.out.println("Students must check in/out at the counter");
+        System.out.println("Room booked will be forfeited after 10 minutes if no-show");
+        System.out.println("====================================\n");
+    }
+
+    /**
+     * Reads and validates the required capacity from user.
+     */
+    private int readCapacity(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) {
+                    System.out.println("Capacity cannot be empty. Please try again.");
+                    continue;
+                }
+                int capacity = Integer.parseInt(line);
+                if (capacity <= 0) {
+                    System.out.println("Capacity must be greater than 0. Please try again.");
+                    continue;
+                }
+                return capacity;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid whole number.");
+            }
+        }
+    }
+
+    /**
+     * Reads and validates the selected time slot from user.
+     * Accepts both number (1-5) and full slot format (09:00-11:00).
+     * Ensures the selected slot is in the available slots list.
+     */
+    private String readSelectedSlot(String prompt, adt.ListInterface<String> availableSlots) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+
+            // Try to convert number input to slot
+            String selected = convertNumberToSlot(input);
+
+            // Check if it's a valid preset slot
+            if (!control.isValidPresetSlot(selected)) {
+                System.out.println("That is not a valid time slot. Please select from the available slots.");
+                continue;
+            }
+
+            // Check if it's in the available slots for this room/date
+            boolean found = false;
+            for (int i = 1; i <= availableSlots.getLength(); i++) {
+                if (availableSlots.getEntry(i).equals(selected)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                System.out.println("That time slot is not available. Please select from the available slots.");
+                continue;
+            }
+
+            return selected;
+        }
+    }
+
+    /**
+     * Converts number input (1-5) to full time slot format.
+     * If input is not a number, assumes it's already in slot format.
+     */
+    private String convertNumberToSlot(String input) {
+        try {
+            int slotNum = Integer.parseInt(input.trim());
+            if (slotNum >= 1 && slotNum <= 5) {
+                return BookingControl.AVAILABLE_TIME_SLOTS[slotNum - 1];
+            }
+            return input; // Return as-is if out of range
+        } catch (NumberFormatException e) {
+            return input; // Not a number, return as-is
+        }
     }
 
     /**
@@ -193,16 +430,6 @@ public class BookingUI {
                 }
             }
             return d;
-        }
-    }
-
-    private String readValidTimeSlot(String prompt) {
-        while (true) {
-            String raw = readRequiredLine(prompt);
-            if (BookingInputValidator.isValidTimeSlot(raw)) {
-                return BookingInputValidator.normalizeTimeSlot(raw);
-            }
-            System.out.println("Invalid time slot. Use 24-hour format H:mm-H:mm with start before end (e.g. 09:00-11:00).");
         }
     }
 

@@ -1,5 +1,6 @@
 package boundary;
 
+import control.BookingControl;
 import control.FacilityControl;
 import util.ConsoleColors;
 import java.util.Scanner;
@@ -7,10 +8,22 @@ import java.util.Scanner;
 public class StudentUI {
     private final BookingUI bookingUI;
     private final Scanner scanner;
+    private final String studentName;
+    private final String studentEmail;
 
     public StudentUI(FacilityControl facilityControl) {
-        this.bookingUI = new BookingUI(facilityControl);
+        this(facilityControl, "Unknown", "unknown@email.com");
+    }
+
+    public StudentUI(BookingControl bookingControl, String studentName, String studentEmail) {
+        this.bookingUI = new BookingUI(bookingControl, studentName, studentEmail);
         this.scanner = new Scanner(System.in);
+        this.studentName = studentName;
+        this.studentEmail = studentEmail;
+    }
+
+    public StudentUI(FacilityControl facilityControl, String studentName, String studentEmail) {
+        this(new BookingControl(facilityControl), studentName, studentEmail);
     }
 
     public void start() {
@@ -34,9 +47,9 @@ public class StudentUI {
     }
 
     private void printStudentMenu() {
-        System.out.println("\n╔════════════════════════════════════╗");
-        System.out.println("║ TARUMT FACILITIES BOOKING SYSTEM   ║");
-        System.out.println("╚════════════════════════════════════╝");
+        System.out.println("\n==================================");
+        System.out.println("= TARUMT FACILITIES BOOKING SYSTEM  =");
+        System.out.println("==================================");
         System.out.println("1. Room Booking");
         System.out.println("0. Logout & Exit");
         System.out.print("Enter your choice: ");

@@ -655,21 +655,25 @@ public class StaffUI {
         do {
             System.out.println("\n========== VIEW BOOKING DETAILS ==========");
             System.out.println("1. View all bookings");
-            System.out.println("2. Search booking by ID");
-            System.out.println("3. Filter bookings by date");
+            System.out.println("2. View booking details");
+            System.out.println("3. Search booking by ID");
+            System.out.println("4. Filter bookings by date");
             System.out.println("0. Back to menu");
             System.out.print("Enter your choice: ");
 
-            choice = readMenuChoice(0, 3);
+            choice = readMenuChoice(0, 4);
 
             switch (choice) {
                 case 1:
                     viewAllBookings();
                     break;
                 case 2:
-                    searchBookingById();
+                    viewBookingDetailsOption();
                     break;
                 case 3:
+                    searchBookingById();
+                    break;
+                case 4:
                     filterBookingsByDate();
                     break;
                 case 0:
@@ -683,26 +687,87 @@ public class StaffUI {
     private void viewAllBookings() {
         System.out.println("\n========== VIEW ALL BOOKINGS ==========");
         java.util.List<entity.Booking> allBookings = bookingControl.getAllBookings();
-        
+
         if (allBookings.isEmpty()) {
             System.out.println("No bookings found in the system.");
             return;
         }
-        
+
         System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.size()));
-        System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s", "Booking ID", "Room ID", "Date", "Time Slot", "Status"));
-        System.out.println("-".repeat(70));
-        
+        System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
+        System.out.println("-".repeat(115));
+
         for (entity.Booking booking : allBookings) {
-            String status = booking.getStatus();
-            String lines = String.format("%-10s %-10s %-15s %-15s %-12s", 
-                booking.getBookingID(), booking.getRoomID(), booking.getDate(), 
-                booking.getTimeSlot(), status);
-            System.out.println(lines);
-            
-            if ("CANCELLED".equals(status) && booking.getCancelReason() != null) {
-                System.out.println("             Cancellation Reason: " + booking.getCancelReason());
-            }
+            System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                    booking.getBookingID(), booking.getRoomID(), booking.getDate(),
+                    booking.getTimeSlot(), booking.getStatus(),
+                    booking.getStudentUsername(), booking.getStudentEmail()));
+        }
+    }
+
+    private void viewBookingDetailsOption() {
+        System.out.println("\n========== VIEW BOOKING DETAILS ==========");
+        java.util.List<entity.Booking> allBookings = bookingControl.getAllBookings();
+
+        if (allBookings.isEmpty()) {
+            System.out.println("No bookings found in the system.");
+            return;
+        }
+
+        System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.size()));
+        System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
+        System.out.println("-".repeat(115));
+
+        for (entity.Booking booking : allBookings) {
+            System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                    booking.getBookingID(), booking.getRoomID(), booking.getDate(),
+                    booking.getTimeSlot(), booking.getStatus(),
+                    booking.getStudentUsername(), booking.getStudentEmail()));
+        }
+
+        System.out.print("\nEnter booking ID to view details (or 0 to exit): ");
+        String bookingID = scanner.nextLine().trim();
+
+        if (bookingID.equals("0")) {
+            return;
+        }
+
+        if (bookingID.isEmpty()) {
+            System.out.println(ConsoleColors.error("[ERROR] Booking ID cannot be empty."));
+            return;
+        }
+
+        entity.Booking booking = bookingControl.findBookingById(bookingID);
+
+        if (booking == null) {
+            System.out.println(ConsoleColors.error("[ERROR] Booking not found with ID: " + bookingID));
+            return;
+        }
+
+        entity.Room room = facilityControl.searchFacility(booking.getRoomID());
+
+        System.out.println("\n========== BOOKING DETAILS ==========");
+        System.out.println("Booking ID   : " + booking.getBookingID());
+        System.out.println("Student Name : " + booking.getStudentUsername());
+        System.out.println("Student Email: " + booking.getStudentEmail());
+        System.out.println("Date         : " + booking.getDate());
+        System.out.println("Time Slot    : " + booking.getTimeSlot());
+        System.out.println("Status       : " + booking.getStatus());
+
+        if (room != null) {
+            System.out.println("\n--- Room Information ---");
+            System.out.println("Room ID  : " + room.getRoomID());
+            System.out.println("Name     : " + room.getName());
+            System.out.println("Capacity : " + room.getCapacity());
+            System.out.println("Location : " + room.getLocation());
+            System.out.println("Equipment: " + room.getEquipment());
+        }
+
+        if ("CANCELLED".equals(booking.getStatus()) && booking.getCancelReason() != null) {
+            System.out.println("\n--- Cancellation Information ---");
+            System.out.println("Reason: " + booking.getCancelReason());
         }
     }
 
@@ -710,27 +775,29 @@ public class StaffUI {
         System.out.println("\n========== SEARCH BOOKING ==========");
         System.out.print("Enter booking ID (e.g. B1, B2): ");
         String bookingID = scanner.nextLine().trim();
-        
+
         if (bookingID.isEmpty()) {
             System.out.println(ConsoleColors.error("\n[ERROR] Booking ID cannot be empty."));
             return;
         }
-        
+
         entity.Booking booking = bookingControl.findBookingById(bookingID);
-        
+
         if (booking == null) {
             System.out.println(ConsoleColors.error("\n[ERROR] Booking not found with ID: " + bookingID));
             return;
         }
-        
+
         System.out.println("\n========== BOOKING DETAILS ==========");
-        System.out.println("Booking ID: " + booking.getBookingID());
-        System.out.println("Room ID: " + booking.getRoomID());
-        System.out.println("Date: " + booking.getDate());
-        System.out.println("Time Slot: " + booking.getTimeSlot());
-        System.out.println("Status: " + booking.getStatus());
+        System.out.println("Booking ID   : " + booking.getBookingID());
+        System.out.println("Room ID      : " + booking.getRoomID());
+        System.out.println("Date         : " + booking.getDate());
+        System.out.println("Time Slot    : " + booking.getTimeSlot());
+        System.out.println("Student Name : " + booking.getStudentUsername());
+        System.out.println("Student Email: " + booking.getStudentEmail());
+        System.out.println("Status       : " + booking.getStatus());
         if ("CANCELLED".equals(booking.getStatus()) && booking.getCancelReason() != null) {
-            System.out.println("Cancellation Reason: " + booking.getCancelReason());
+            System.out.println("Cancel Reason: " + booking.getCancelReason());
         }
     }
 
@@ -738,37 +805,34 @@ public class StaffUI {
         System.out.println("\n========== FILTER BOOKINGS BY DATE ==========");
         System.out.print("Enter date (YYYY-MM-DD, e.g. 2026-03-25): ");
         String dateInput = scanner.nextLine().trim();
-        
+
         if (dateInput.isEmpty()) {
             System.out.println("\n[ERROR] Date cannot be empty.");
             return;
         }
-        
-        // Validate date format
+
         if (!dateInput.matches("\\d{4}-\\d{2}-\\d{2}")) {
             System.out.println("\n[ERROR] Invalid date format. Please use YYYY-MM-DD.");
             return;
         }
-        
+
         java.util.List<entity.Booking> bookingsForDate = bookingControl.getBookingsByDate(dateInput);
-        
+
         if (bookingsForDate.isEmpty()) {
             System.out.println("\nNo bookings found for date: " + dateInput);
             return;
         }
-        
+
         System.out.println(String.format("\nBookings for %s: %d bookings\n", dateInput, bookingsForDate.size()));
-        System.out.println(String.format("%-10s %-10s %-15s %-12s", "Booking ID", "Room ID", "Time Slot", "Status"));
-        System.out.println("-".repeat(60));
-        
+        System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
+        System.out.println("-".repeat(115));
+
         for (entity.Booking booking : bookingsForDate) {
-            String status = booking.getStatus();
-            System.out.println(String.format("%-10s %-10s %-15s %-12s", 
-                booking.getBookingID(), booking.getRoomID(), booking.getTimeSlot(), status));
-            
-            if ("CANCELLED".equals(status) && booking.getCancelReason() != null) {
-                System.out.println("             Cancellation Reason: " + booking.getCancelReason());
-            }
+            System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                    booking.getBookingID(), booking.getRoomID(), booking.getDate(),
+                    booking.getTimeSlot(), booking.getStatus(),
+                    booking.getStudentUsername(), booking.getStudentEmail()));
         }
     }
 
@@ -1143,9 +1207,9 @@ public class StaffUI {
     }
 
     private void printStaffMenu() {
-        System.out.println("\n╔═══════════════════════╗");
-        System.out.println("║      STAFF PAGE       ║");
-        System.out.println("╚═══════════════════════╝");
+        System.out.println("\n=======================");
+        System.out.println("=      STAFF PAGE       =");
+        System.out.println("=======================");
         System.out.println("1. Manage Users");
         System.out.println("2. View Booking Details");
         System.out.println("3. Manage Facilities");

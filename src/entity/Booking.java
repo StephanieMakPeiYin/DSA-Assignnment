@@ -7,14 +7,18 @@ public class Booking {
     private String timeSlot;
     private String status;
     private String cancelReason;
+    private String studentUsername;
+    private String studentEmail;
 
-    public Booking(String bookingID, String roomID, String date, String timeSlot) {
+    public Booking(String bookingID, String roomID, String date, String timeSlot, String studentUsername, String studentEmail) {
         this.bookingID = bookingID;
         this.roomID = roomID;
         this.date = date;
         this.timeSlot = timeSlot;
         this.status = "ACTIVE";
         this.cancelReason = null;
+        this.studentUsername = studentUsername == null ? "Unknown" : studentUsername;
+        this.studentEmail = studentEmail == null ? "Unknown" : studentEmail;
     }
 
     public String getBookingID() {
@@ -41,6 +45,14 @@ public class Booking {
         return cancelReason;
     }
 
+    public String getStudentUsername() {
+        return studentUsername;
+    }
+
+    public String getStudentEmail() {
+        return studentEmail;
+    }
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -55,7 +67,7 @@ public class Booking {
     public String toString() {
         String base = bookingID + " | " + roomID + " | " + date + " | " + timeSlot + " | " + status;
         if ("CANCELLED".equals(status) && cancelReason != null && !cancelReason.isEmpty()) {
-            return base + " | Reason: " + cancelReason;
+            return base + " | " + cancelReason;
         }
         return base;
     }

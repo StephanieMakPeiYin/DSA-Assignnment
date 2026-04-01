@@ -1,0 +1,2 @@
+B1|A101|2026-04-02|09:00-11:00|ACTIVE||stephanie|step@gmail.com
+B2|A110|2026-04-02|11:00-13:00|CANCELLED|Room no longer needed|stephanie|step@gmail.com

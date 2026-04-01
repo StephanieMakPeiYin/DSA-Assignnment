@@ -23,9 +23,9 @@ public class Main {
         while (true) {
             // Show authentication screen
             if (!authUI.startAuthentication()) {
-                System.out.println("\n╔═══════════════════════════════════════════════════════╗");
-                System.out.println("║  Thank you for using TARUMT FACILITIES BOOKING system ║");
-                System.out.println("╚═══════════════════════════════════════════════════════╝");
+                System.out.println("\n=======================================================");
+                System.out.println("= Thank you for using TARUMT FACILITIES BOOKING system =");
+                System.out.println("=========================================================");
                 break;
             }
 
