@@ -1,19 +1,72 @@
 package control;
 
-import adt.UserArrayList;
-import adt.UserListADT;
+import adt.ArrayListADT;
 import entity.User;
+import java.util.ArrayList;
 import java.util.List;
+import util.UserFileManager;
 
 public class UserControl {
-    private UserListADT userList;
+    private ArrayListADT<User> userList;
+    private int studentIDCounter;
+    private int staffIDCounter;
     
     public UserControl() {
-        this.userList = new UserArrayList();
+        refreshUserList();
     }
 
     private void refreshUserList() {
-        this.userList = new UserArrayList();
+        this.userList = new ArrayListADT<>();
+        this.studentIDCounter = 1;
+        this.staffIDCounter = 1;
+        loadUsersFromFile();
+    }
+
+    private void loadUsersFromFile() {
+        List<User> loadedUsers = UserFileManager.loadUsers();
+        for (User user : loadedUsers) {
+            userList.add(user);
+            updateCountersByUserID(user.getUserID());
+        }
+    }
+
+    private void updateCountersByUserID(String userID) {
+        if (userID == null || userID.length() < 4) {
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(userID.substring(3));
+            if (userID.startsWith("STU") && id >= studentIDCounter) {
+                studentIDCounter = id + 1;
+            } else if (userID.startsWith("STA") && id >= staffIDCounter) {
+                staffIDCounter = id + 1;
+            }
+        } catch (NumberFormatException ignored) {
+            // Ignore malformed IDs while loading existing data.
+        }
+    }
+
+    private String generateUserID(String userType) {
+        if ("STUDENT".equals(userType)) {
+            return String.format("STU%03d", studentIDCounter++);
+        }
+        if ("STAFF".equals(userType)) {
+            return String.format("STA%03d", staffIDCounter++);
+        }
+        return "";
+    }
+
+    private List<User> toJavaList() {
+        List<User> allUsers = new ArrayList<>();
+        int total = userList.getLength();
+        for (int i = 1; i <= total; i++) {
+            User user = userList.getEntry(i);
+            if (user != null) {
+                allUsers.add(user);
+            }
+        }
+        return allUsers;
     }
 
     /**
@@ -21,7 +74,7 @@ public class UserControl {
      */
     public List<User> getAllUsers() {
         refreshUserList();
-        return userList.getAllUsers();
+        return toJavaList();
     }
 
     /**
@@ -32,8 +85,7 @@ public class UserControl {
             return null;
         }
         refreshUserList();
-        // Find with exact case match
-        List<User> allUsers = userList.getAllUsers();
+        List<User> allUsers = toJavaList();
         for (User user : allUsers) {
             if (user.getEmail().equals(email)) {
                 return user;
@@ -50,7 +102,7 @@ public class UserControl {
             return null;
         }
         refreshUserList();
-        List<User> allUsers = userList.getAllUsers();
+        List<User> allUsers = toJavaList();
         for (User user : allUsers) {
             if (user.getUserID() != null && user.getUserID().equalsIgnoreCase(userID)) {
                 return user;
@@ -69,7 +121,7 @@ public class UserControl {
         }
         refreshUserList();
         String searchName = name.trim().toLowerCase();
-        List<User> allUsers = userList.getAllUsers();
+        List<User> allUsers = toJavaList();
         for (User user : allUsers) {
             if (user.getName() != null && user.getName().toLowerCase().contains(searchName)) {
                 results.add(user);
@@ -87,7 +139,17 @@ public class UserControl {
             return false;
         }
         refreshUserList();
-        return userList.deleteUser(email);
+        int total = userList.getLength();
+        for (int i = 1; i <= total; i++) {
+            User user = userList.getEntry(i);
+            if (user != null && user.getEmail().equals(email)) {
+                user.setStatus("removed");
+                userList.replace(i, user);
+                UserFileManager.saveUsers(toJavaList());
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -95,7 +157,7 @@ public class UserControl {
      */
     public int getTotalUsers() {
         refreshUserList();
-        return userList.getSize();
+        return userList.getLength();
     }
 
     /**
@@ -104,7 +166,11 @@ public class UserControl {
     public void addUser(User user) {
         if (user != null) {
             refreshUserList();
-            userList.addUser(user);
+            if (user.getUserID() == null || user.getUserID().isEmpty()) {
+                user.setUserID(generateUserID(user.getUserType()));
+            }
+            userList.add(user);
+            UserFileManager.saveUsers(toJavaList());
         }
     }
 
@@ -117,6 +183,15 @@ public class UserControl {
             return false;
         }
         refreshUserList();
-        return userList.updateUser(updatedUser);
+        int total = userList.getLength();
+        for (int i = 1; i <= total; i++) {
+            User existingUser = userList.getEntry(i);
+            if (existingUser != null && existingUser.getEmail().equals(updatedUser.getEmail())) {
+                userList.replace(i, updatedUser);
+                UserFileManager.saveUsers(toJavaList());
+                return true;
+            }
+        }
+        return false;
     }
 }
