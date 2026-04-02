@@ -99,6 +99,19 @@ public class FacilityControl {
     }
 
     /**
+     * Recovery Facility: Recover a soft-deleted facility.
+     * Staff may restore the facility so it becomes bookable and visible again.
+     */
+    public int recoverFacility(String facilityId) {
+        Room f = searchFacility(facilityId);
+        if (f == null) {
+            return FACILITY_NOT_FOUND;
+        }
+        f.setDeleted(false);
+        return OPERATION_OK;
+    }
+
+    /**
      * Core Function 3: Update Facility Details
      * Finds an existing facility and overwrites its details.
      * Note: Facility ID is kept intact.
@@ -162,6 +175,17 @@ public class FacilityControl {
         return bookable;
     }
 
+    public ListInterface<Room> getDeletedFacilities() {
+        ArrayListADT<Room> deleted = new ArrayListADT<>();
+        for (int i = 1; i <= facilityList.getLength(); i++) {
+            Room r = facilityList.getEntry(i);
+            if (r.isDeleted()) {
+                deleted.add(r);
+            }
+        }
+        return deleted;
+    }
+
     /**
      * Utility Method: To check if a facility exists (useful for other modules)
      */
@@ -181,14 +205,29 @@ public class FacilityControl {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\|");
-                if (parts.length == 5) {
+                if (parts.length >= 5) {
                     String roomID = parts[0].trim();
                     String name = parts[1].trim();
                     int capacity = Integer.parseInt(parts[2].trim());
                     String location = parts[3].trim();
                     String equipment = parts[4].trim();
                     Room room = new Room(roomID, name, capacity, location, equipment);
-                    facilityList.add(room);
+                    if (parts.length >= 6) {
+                        boolean deleted = Boolean.parseBoolean(parts[5].trim());
+                        if (deleted) {
+                            room.setDeleted(true);
+                        }
+                    }
+                    if (parts.length >= 7) {
+                        try {
+                            long deletionTime = Long.parseLong(parts[6].trim());
+                            room.setDeletionTime(deletionTime);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    if (!room.shouldBeDeleted()) {
+                        facilityList.add(room);
+                    }
                 }
             }
         } catch (IOException | NumberFormatException e) {
@@ -203,9 +242,7 @@ public class FacilityControl {
         try (PrintWriter writer = new PrintWriter(new FileWriter("src/facility.txt"))) {
             for (int i = 1; i <= facilityList.getLength(); i++) {
                 Room room = facilityList.getEntry(i);
-                if (!room.isDeleted()) {  // Only save non-deleted facilities
-                    writer.println(room.getRoomID() + "|" + room.getName() + "|" + room.getCapacity() + "|" + room.getLocation() + "|" + room.getEquipment());
-                }
+                writer.println(room.getRoomID() + "|" + room.getName() + "|" + room.getCapacity() + "|" + room.getLocation() + "|" + room.getEquipment() + "|" + room.isDeleted() + "|" + room.getDeletionTime());
             }
         } catch (IOException e) {
             System.out.println("Error saving facilities to file: " + e.getMessage());

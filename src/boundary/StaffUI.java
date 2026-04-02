@@ -844,10 +844,11 @@ public class StaffUI {
             System.out.println("2. Add new facility");
             System.out.println("3. Update facility");
             System.out.println("4. Delete facility");
+            System.out.println("5. Recover facility");
             System.out.println("0. Back to menu");
             System.out.print("Enter your choice: ");
 
-            choice = readMenuChoice(0, 4);
+            choice = readMenuChoice(0, 5);
 
             switch (choice) {
                 case 1:
@@ -861,6 +862,9 @@ public class StaffUI {
                     break;
                 case 4:
                     deleteFacility();
+                    break;
+                case 5:
+                    recoverFacility();
                     break;
                 case 0:
                     return;
@@ -978,6 +982,38 @@ public class StaffUI {
         int result = facilityControl.removeFacility(facilityId);
         if (result == FacilityControl.OPERATION_OK) {
             System.out.println(ConsoleColors.success("Facility deleted successfully!"));
+        } else if (result == FacilityControl.FACILITY_NOT_FOUND) {
+            System.out.println(ConsoleColors.error("Facility not found!"));
+        }
+    }
+
+    private void recoverFacility() {
+        System.out.println("\n========== RECOVER FACILITY ==========");
+
+        adt.ListInterface<Room> deletedFacilities = facilityControl.getDeletedFacilities();
+        if (deletedFacilities.getLength() == 0) {
+            System.out.println("No soft-deleted facilities available for recovery.");
+            return;
+        }
+
+        System.out.println("Soft-deleted facilities:");
+        System.out.println(String.format("%-10s %-20s %-30s %-12s", "Facility ID", "Name", "Location", "Equipment"));
+        System.out.println("-".repeat(80));
+        for (int i = 1; i <= deletedFacilities.getLength(); i++) {
+            Room room = deletedFacilities.getEntry(i);
+            System.out.println(String.format("%-10s %-20s %-30s %-12s", room.getRoomID(), room.getName(), room.getLocation(), room.getEquipment()));
+        }
+
+        System.out.print("Enter facility ID to recover (or 0 to cancel): ");
+        String facilityId = scanner.nextLine().trim();
+        if (facilityId.equals("0")) {
+            System.out.println("Facility recovery cancelled.");
+            return;
+        }
+        
+        int result = facilityControl.recoverFacility(facilityId);
+        if (result == FacilityControl.OPERATION_OK) {
+            System.out.println(ConsoleColors.success("Facility recovered successfully! It will now appear in the facility list."));
         } else if (result == FacilityControl.FACILITY_NOT_FOUND) {
             System.out.println(ConsoleColors.error("Facility not found!"));
         }

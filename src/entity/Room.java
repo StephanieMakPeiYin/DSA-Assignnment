@@ -74,7 +74,9 @@ public class Room {
     public void setDeleted(boolean deleted) {
         isDeleted = deleted;
         if (deleted) {
-            deletionTime = System.currentTimeMillis() + 3L * 24 * 60 * 60 * 1000; // 3 days
+            deletionTime = System.currentTimeMillis();
+        } else {
+            deletionTime = 0;
         }
     }
 
@@ -82,12 +84,16 @@ public class Room {
         return deletionTime;
     }
 
+    public void setDeletionTime(long deletionTime) {
+        this.deletionTime = deletionTime;
+    }
+
     public boolean isBookable() {
         return !isDeleted;
     }
 
     public boolean shouldBeDeleted() {
-        return isDeleted && System.currentTimeMillis() > deletionTime;
+        return isDeleted && deletionTime > 0 && System.currentTimeMillis() >= deletionTime + 3L * 24 * 60 * 60 * 1000;
     }
 
     @Override
