@@ -578,7 +578,6 @@ public class StaffUI {
         System.out.println("User ID: " + existingUser.getUserID());
         System.out.println("Name: " + existingUser.getName());
         System.out.println("Email: " + existingUser.getEmail());
-        System.out.println("Password: " + existingUser.getPassword());
         System.out.println("User Type: " + existingUser.getUserType());
         System.out.println("Status: " + existingUser.getStatus());
 
@@ -598,49 +597,6 @@ public class StaffUI {
             }
             if (!isValidName(newName)) {
                 System.out.println(ConsoleColors.error("\n[ERROR] Name must be 1-20 characters and contain no spaces."));
-                continue;
-            }
-            break;
-        }
-
-        String newEmail;
-        while (true) {
-            System.out.print("New email [Current email: " + existingUser.getEmail() + "]: ");
-            newEmail = scanner.nextLine().trim();
-            if (newEmail.equals("0")) {
-                System.out.println("Cancelled user update.");
-                return;
-            }
-            if (newEmail.isEmpty()) {
-                newEmail = existingUser.getEmail();
-                break;
-            }
-            if (!isValidEmail(newEmail)) {
-                System.out.println(ConsoleColors.error("\n[ERROR] Email must be in format: username@gmail.com"));
-                continue;
-            }
-            // Check if new email is the same as an existing user's email (excluding current user)
-            if (userControl.isEmailInUse(newEmail, existingUser.getEmail())) {
-                System.out.println(ConsoleColors.error("\n[ERROR] This email is already in use by another user. Please choose a different email."));
-                continue;
-            }
-            break;
-        }
-
-        String newPassword;
-        while (true) {
-            System.out.print("New password (at least 5 chars with digit): ");
-            newPassword = scanner.nextLine();
-            if (newPassword.equals("0")) {
-                System.out.println("Cancelled user update.");
-                return;
-            }
-            if (newPassword.isEmpty()) {
-                newPassword = existingUser.getPassword();
-                break;
-            }
-            if (!isValidPassword(newPassword)) {
-                System.out.println(ConsoleColors.error("\n[ERROR] Password must be at least 5 chars and include at least one number."));
                 continue;
             }
             break;
@@ -671,14 +627,39 @@ public class StaffUI {
             }
         }
 
-        entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, newEmail, newPassword, newUserType, existingUser.getStatus());
+        String newStatus;
+        while (true) {
+            System.out.println("Select status:");
+            System.out.println("[1] Active\n[2] Removed\n[0] cancel");
+            System.out.print("Enter choice: ");
+            String statusChoice = scanner.nextLine().trim();
+            if (statusChoice.equals("0")) {
+                System.out.println("Cancelled user update.");
+                return;
+            }
+            if (statusChoice.isEmpty()) {
+                newStatus = existingUser.getStatus();
+                break;
+            }
+            if (statusChoice.equals("1")) {
+                newStatus = "active";
+                break;
+            } else if (statusChoice.equals("2")) {
+                newStatus = "removed";
+                break;
+            } else {
+                System.out.println(ConsoleColors.error("\n[ERROR] Invalid status choice."));
+            }
+        }
+
+        entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, existingUser.getEmail(), existingUser.getPassword(), newUserType, newStatus);
         boolean success = userControl.updateUser(existingUser.getEmail(), updatedUser);
 
         if (success) {
             System.out.println(ConsoleColors.success("\n[SUCCESS] User information updated successfully!"));
             System.out.println("Name: " + newName);
-            System.out.println("Email: " + newEmail);
             System.out.println("User Type: " + newUserType);
+            System.out.println("Status: " + newStatus);
         } else {
             System.out.println(ConsoleColors.error("\n[ERROR] Failed to update user information."));
         }
