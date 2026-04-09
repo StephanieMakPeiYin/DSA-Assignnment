@@ -578,6 +578,7 @@ public class StaffUI {
         System.out.println("User ID: " + existingUser.getUserID());
         System.out.println("Name: " + existingUser.getName());
         System.out.println("Email: " + existingUser.getEmail());
+        System.out.println("Password: " + existingUser.getPassword());
         System.out.println("User Type: " + existingUser.getUserType());
         System.out.println("Status: " + existingUser.getStatus());
 
@@ -597,6 +598,30 @@ public class StaffUI {
             }
             if (!isValidName(newName)) {
                 System.out.println(ConsoleColors.error("\n[ERROR] Name must be 1-20 characters and contain no spaces."));
+                continue;
+            }
+            break;
+        }
+
+        String newEmail;
+        while (true) {
+            System.out.print("New email [Current email: " + existingUser.getEmail() + "]: ");
+            newEmail = scanner.nextLine().trim();
+            if (newEmail.equals("0")) {
+                System.out.println("Cancelled user update.");
+                return;
+            }
+            if (newEmail.isEmpty()) {
+                newEmail = existingUser.getEmail();
+                break;
+            }
+            if (!isValidEmail(newEmail)) {
+                System.out.println(ConsoleColors.error("\n[ERROR] Email must be in format: username@gmail.com"));
+                continue;
+            }
+            // Check if new email is the same as an existing user's email (excluding current user)
+            if (userControl.isEmailInUse(newEmail, existingUser.getEmail())) {
+                System.out.println(ConsoleColors.error("\n[ERROR] This email is already in use by another user. Please choose a different email."));
                 continue;
             }
             break;
@@ -646,12 +671,13 @@ public class StaffUI {
             }
         }
 
-        entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, existingUser.getEmail(), newPassword, newUserType, existingUser.getStatus());
-        boolean success = userControl.updateUser(updatedUser);
+        entity.User updatedUser = new entity.User(existingUser.getUserID(), newName, newEmail, newPassword, newUserType, existingUser.getStatus());
+        boolean success = userControl.updateUser(existingUser.getEmail(), updatedUser);
 
         if (success) {
             System.out.println(ConsoleColors.success("\n[SUCCESS] User information updated successfully!"));
             System.out.println("Name: " + newName);
+            System.out.println("Email: " + newEmail);
             System.out.println("User Type: " + newUserType);
         } else {
             System.out.println(ConsoleColors.error("\n[ERROR] Failed to update user information."));
@@ -1333,6 +1359,13 @@ public class StaffUI {
             return false;
         }
         return password.chars().anyMatch(Character::isDigit);
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        return email.endsWith("@gmail.com") && email.contains("@") && email.indexOf("@") > 0;
     }
 
     private void printStaffMenu() {

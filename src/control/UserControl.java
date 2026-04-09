@@ -177,6 +177,48 @@ public class UserControl {
     }
 
     /**
+     * Check if an email is already in use (excluding a specific email to ignore)
+     * Returns true if email exists in system, false otherwise
+     */
+    public boolean isEmailInUse(String email, String emailToExclude) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        refreshUserList();
+        for (int i = 1; i <= userList.getLength(); i++) {
+            User user = userList.getEntry(i);
+            if (user != null && user.getEmail().equals(email)) {
+                // If this is the email we're excluding (current user), skip it
+                if (!email.equals(emailToExclude)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Update an existing user by old email and set new email
+     * Returns true if update was successful, false otherwise
+     */
+    public boolean updateUser(String oldEmail, User updatedUser) {
+        if (oldEmail == null || oldEmail.trim().isEmpty() || updatedUser == null) {
+            return false;
+        }
+        refreshUserList();
+        int total = userList.getLength();
+        for (int i = 1; i <= total; i++) {
+            User existingUser = userList.getEntry(i);
+            if (existingUser != null && existingUser.getEmail().equals(oldEmail)) {
+                userList.replace(i, updatedUser);
+                UserFileManager.saveUsersADT(userList);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Update an existing user (case-sensitive by email)
      * Returns true if update was successful, false otherwise
      */
