@@ -35,7 +35,8 @@ public class Main {
                 staffUI.start();
                 facilityControl.saveFacilitiesToFile();
             } else if (authControl.isStudent()) {
-                StudentUI studentUI = new StudentUI(facilityControl);
+                entity.User student = authControl.getCurrentUser();
+                StudentUI studentUI = new StudentUI(bookingControl, student.getName(), student.getEmail());
                 studentUI.start();
             }
 

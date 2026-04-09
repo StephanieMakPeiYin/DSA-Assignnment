@@ -2,6 +2,7 @@ package boundary;
 
 import control.BookingControl;
 import control.FacilityControl;
+import entity.Booking;
 import util.BookingInputValidator;
 import util.ConsoleColors;
 
@@ -205,15 +206,15 @@ public class BookingUI {
             sub = readMenuChoice(0, 3);
             switch (sub) {
                 case 1 -> {
-                    control.displayBookings("ALL");
+                    control.displayBookingsForStudent(studentName, "ALL");
                     pause();
                 }
                 case 2 -> {
-                    control.displayBookings("ACTIVE");
+                    control.displayBookingsForStudent(studentName, "ACTIVE");
                     pause();
                 }
                 case 3 -> {
-                    control.displayBookings("CANCELLED");
+                    control.displayBookingsForStudent(studentName, "CANCELLED");
                     pause();
                 }
                 case 0 -> { /* back */ }
@@ -247,12 +248,25 @@ public class BookingUI {
         System.out.println("\n--- New Booking ---");
         displayBookingPolicy();
 
+        int maxBookableCapacity = control.getMaximumBookableCapacity();
+        if (maxBookableCapacity <= 0) {
+            System.out.println("No rooms are currently available for booking.");
+            pause();
+            return;
+        }
+
         // Step 1: Ask for date
         LocalDate bookingDate = readValidBookingDate("Enter booking date (yyyy-MM-dd e.g. 2026-03-25): ", false);
         String isoDate = BookingInputValidator.formatDate(bookingDate);
 
         // Step 2: Ask for capacity
-        int requiredCapacity = readCapacity("Enter required capacity: ");
+        int requiredCapacity = readCapacity(
+                "Enter required capacity (1-" + maxBookableCapacity + ", or 0 to return): ",
+                maxBookableCapacity);
+        if (requiredCapacity == 0) {
+            System.out.println("Returning to menu...");
+            return;
+        }
 
         // Step 3: Show rooms that can support that capacity (sorted)
         control.displayRoomsByCapacity(requiredCapacity);
@@ -322,7 +336,7 @@ public class BookingUI {
     /**
      * Reads and validates the required capacity from user.
      */
-    private int readCapacity(String prompt) {
+    private int readCapacity(String prompt, int maxCapacity) {
         while (true) {
             System.out.print(prompt);
             try {
@@ -332,13 +346,20 @@ public class BookingUI {
                     continue;
                 }
                 int capacity = Integer.parseInt(line);
-                if (capacity <= 0) {
-                    System.out.println("Capacity must be greater than 0. Please try again.");
+                if (capacity == 0) {
+                    return 0;
+                }
+                if (capacity < 0) {
+                    System.out.println("Capacity cannot be negative. Please try again.");
+                    continue;
+                }
+                if (capacity > maxCapacity) {
+                    System.out.println("Invalid capacity. Maximum supported capacity is " + maxCapacity + ".");
                     continue;
                 }
                 return capacity;
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a valid whole number.");
+                System.out.println("Invalid input. Please enter a whole number between 1 and " + maxCapacity + ", or 0 to return.");
             }
         }
     }
@@ -402,8 +423,9 @@ public class BookingUI {
     private String readExistingRoomId(String prompt) {
         while (true) {
             String id = readRequiredLine(prompt);
-            if (control.roomExists(id)) {
-                return id;
+            String normalizedId = id.trim().toUpperCase();
+            if (control.roomExists(normalizedId)) {
+                return normalizedId;
             }
             System.out.println("Unknown room ID. Choose from the list above.");
         }
@@ -435,25 +457,42 @@ public class BookingUI {
 
     private void cancelBooking() {
         System.out.println("\n--- Cancel booking ---");
-        
-        int activeCount = control.countActiveBookings();
-        if (activeCount == 0) {
+
+        // Check whether this student has any active bookings
+        boolean hasActiveBooking = false;
+        adt.ListInterface<Booking> allBookings = control.getAllBookingsADT();
+        for (int i = 1; i <= allBookings.getLength(); i++) {
+            Booking b = allBookings.getEntry(i);
+            if (studentName.equalsIgnoreCase(b.getStudentUsername()) && "ACTIVE".equals(b.getStatus())) {
+                hasActiveBooking = true;
+                break;
+            }
+        }
+        if (!hasActiveBooking) {
             System.out.println("No active bookings recorded yet.");
             pause();
             return;
         }
-        
-        control.displayBookings("ACTIVE");
-        
+
+        // Show only this student's active bookings
+        control.displayBookingsForStudent(studentName, "ACTIVE");
+
         String id;
         while (true) {
             id = readRequiredLine("Enter booking ID to cancel (e.g. B1, or 0 to return): ");
-            
+
             if (id.equals("0")) {
                 System.out.println("Returning to menu...");
                 return;
             }
-            
+
+            // Verify the booking belongs to this student
+            Booking target = control.findBookingById(id);
+            if (target != null && !studentName.equalsIgnoreCase(target.getStudentUsername())) {
+                System.out.println("That booking does not belong to you. Please try again.");
+                continue;
+            }
+
             int eligible = control.getCancelEligibility(id);
             if (eligible == BookingControl.CANCEL_OK) {
                 break;

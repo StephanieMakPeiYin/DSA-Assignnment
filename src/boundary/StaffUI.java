@@ -1,11 +1,11 @@
 package boundary;
 
+import adt.ArrayListADT;
+import adt.ListInterface;
 import control.BookingControl;
 import control.FacilityControl;
 import control.UserControl;
 import entity.Room;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 import util.ConsoleColors;
 
@@ -91,13 +91,14 @@ public class StaffUI {
     // --- View All Users ---
     private void viewAllUsers() {
         System.out.println("\n========== VIEW ALL USERS ==========");
-        java.util.List<entity.User> users = userControl.getAllUsers();
+        ListInterface<entity.User> users = userControl.getAllUsers();
         
         // Filter out staff account, separate active and removed users
-        java.util.List<entity.User> activeUsers = new java.util.ArrayList<>();
-        java.util.List<entity.User> removedUsers = new java.util.ArrayList<>();
+        ListInterface<entity.User> activeUsers = new ArrayListADT<>();
+        ListInterface<entity.User> removedUsers = new ArrayListADT<>();
         
-        for (entity.User user : users) {
+        for (int i = 1; i <= users.getLength(); i++) {
+            entity.User user = users.getEntry(i);
             if (!user.getEmail().equals("staff@gmail.com")) {
                 if ("active".equals(user.getStatus())) {
                     activeUsers.add(user);
@@ -107,30 +108,32 @@ public class StaffUI {
             }
         }
         
-        if (activeUsers.isEmpty() && removedUsers.isEmpty()) {
+        if (activeUsers.getLength() == 0 && removedUsers.getLength() == 0) {
             System.out.println("No users found in the system.");
             return;
         }
         
         // Display active users
-        if (!activeUsers.isEmpty()) {
-            System.out.println(String.format("\n--- ACTIVE USERS (%d) ---\n", activeUsers.size()));
+        if (activeUsers.getLength() > 0) {
+            System.out.println(String.format("\n--- ACTIVE USERS (%d) ---\n", activeUsers.getLength()));
             System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", "User ID", "Name", "Email", "User Type", "Status"));
             System.out.println("-".repeat(80));
             
-            for (entity.User user : activeUsers) {
+            for (int i = 1; i <= activeUsers.getLength(); i++) {
+                entity.User user = activeUsers.getEntry(i);
                 System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", 
                     user.getUserID(), user.getName(), user.getEmail(), user.getUserType(), user.getStatus()));
             }
         }
         
         // Display removed users if exist
-        if (!removedUsers.isEmpty()) {
-            System.out.println(String.format("\n--- REMOVED USERS (%d) ---\n", removedUsers.size()));
+        if (removedUsers.getLength() > 0) {
+            System.out.println(String.format("\n--- REMOVED USERS (%d) ---\n", removedUsers.getLength()));
             System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", "User ID", "Name", "Email", "User Type", "Status"));
             System.out.println("-".repeat(80));
             
-            for (entity.User user : removedUsers) {
+            for (int i = 1; i <= removedUsers.getLength(); i++) {
+                entity.User user = removedUsers.getEntry(i);
                 System.out.println(String.format("%-10s %-20s %-25s %-12s %-10s", 
                     user.getUserID(), user.getName(), user.getEmail(), user.getUserType(), user.getStatus()));
             }
@@ -200,26 +203,28 @@ public class StaffUI {
             return;
         }
         
-        java.util.List<entity.User> results = userControl.findUsersByName(name);
+        ListInterface<entity.User> results = userControl.findUsersByName(name);
         
         // Filter out deleted users
-        java.util.List<entity.User> activeResults = new java.util.ArrayList<>();
-        for (entity.User user : results) {
+        ListInterface<entity.User> activeResults = new ArrayListADT<>();
+        for (int i = 1; i <= results.getLength(); i++) {
+            entity.User user = results.getEntry(i);
             if ("active".equals(user.getStatus())) {
                 activeResults.add(user);
             }
         }
         
-        if (activeResults.isEmpty()) {
+        if (activeResults.getLength() == 0) {
             System.out.println(ConsoleColors.error("\n[ERROR] No active users found matching name: " + name));
             return;
         }
         
-        System.out.println(ConsoleColors.success("\n[SUCCESS] Found " + activeResults.size() + " user(s) matching name: " + name));
+        System.out.println(ConsoleColors.success("\n[SUCCESS] Found " + activeResults.getLength() + " user(s) matching name: " + name));
         System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
         System.out.println("-".repeat(70));
         
-        for (entity.User user : activeResults) {
+        for (int i = 1; i <= activeResults.getLength(); i++) {
+            entity.User user = activeResults.getEntry(i);
             System.out.println(String.format("%-10s %-20s %-25s %-12s", 
                 user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
         }
@@ -320,16 +325,17 @@ public class StaffUI {
     // --- Recover Deleted User ---
     private void recoverUser() {
 
-        java.util.List<entity.User> allUsers = userControl.getAllUsers();
+        ListInterface<entity.User> allUsers = userControl.getAllUsers();
         
-        java.util.List<entity.User> deletedUsers = new java.util.ArrayList<>();
-        for (entity.User user : allUsers) {
+        ListInterface<entity.User> deletedUsers = new ArrayListADT<>();
+        for (int i = 1; i <= allUsers.getLength(); i++) {
+            entity.User user = allUsers.getEntry(i);
             if ("removed".equals(user.getStatus())) {
                 deletedUsers.add(user);
             }
         }
         
-        if (deletedUsers.isEmpty()) {
+        if (deletedUsers.getLength() == 0) {
             System.out.println("\nNo deleted users found in the system.");
             return;
         }
@@ -362,25 +368,27 @@ public class StaffUI {
 
     private void viewDeletedUsers() {
         System.out.println("\n========== ALL DELETED USERS ==========");
-        java.util.List<entity.User> allUsers = userControl.getAllUsers();
+        ListInterface<entity.User> allUsers = userControl.getAllUsers();
         
-        java.util.List<entity.User> deletedUsers = new java.util.ArrayList<>();
-        for (entity.User user : allUsers) {
+        ListInterface<entity.User> deletedUsers = new ArrayListADT<>();
+        for (int i = 1; i <= allUsers.getLength(); i++) {
+            entity.User user = allUsers.getEntry(i);
             if ("removed".equals(user.getStatus())) {
                 deletedUsers.add(user);
             }
         }
         
-        if (deletedUsers.isEmpty()) {
+        if (deletedUsers.getLength() == 0) {
             System.out.println("\nNo deleted users found in the system.");
             return;
         }
         
-        System.out.println(String.format("\nTotal Deleted Users: %d\n", deletedUsers.size()));
+        System.out.println(String.format("\nTotal Deleted Users: %d\n", deletedUsers.getLength()));
         System.out.println(String.format("%-10s %-20s %-25s %-12s", "User ID", "Name", "Email", "User Type"));
         System.out.println("-".repeat(70));
         
-        for (entity.User user : deletedUsers) {
+        for (int i = 1; i <= deletedUsers.getLength(); i++) {
+            entity.User user = deletedUsers.getEntry(i);
             System.out.println(String.format("%-10s %-20s %-25s %-12s", 
                 user.getUserID(), user.getName(), user.getEmail(), user.getUserType()));
         }
@@ -657,7 +665,7 @@ public class StaffUI {
             System.out.println("1. View all bookings");
             System.out.println("2. View booking details");
             System.out.println("3. Search booking by ID");
-            System.out.println("4. Filter bookings by date");
+            System.out.println("4. Filter bookings");
             System.out.println("0. Back to menu");
             System.out.print("Enter your choice: ");
 
@@ -674,7 +682,7 @@ public class StaffUI {
                     searchBookingById();
                     break;
                 case 4:
-                    filterBookingsByDate();
+                    filterBookingsMenu();
                     break;
                 case 0:
                     return;
@@ -684,21 +692,93 @@ public class StaffUI {
         } while (true);
     }
 
+    private void filterBookingsMenu() {
+        System.out.println("\n========== FILTER BOOKINGS ==========");
+        System.out.println("1. Filter by date");
+        System.out.println("2. Filter by status");
+        System.out.println("0. Back");
+        System.out.print("Enter your choice: ");
+
+        int choice = readMenuChoice(0, 2);
+        switch (choice) {
+            case 1:
+                filterBookingsByDate();
+                break;
+            case 2:
+                filterBookingsByStatus();
+                break;
+            case 0:
+            default:
+                return;
+        }
+    }
+
+    private void filterBookingsByStatus() {
+        System.out.println("\n========== FILTER BOOKINGS BY STATUS ==========");
+        System.out.println("1. Active bookings");
+        System.out.println("2. Cancelled bookings");
+        System.out.print("Enter your choice: ");
+
+        int choice = readMenuChoice(1, 2);
+        String status = (choice == 1) ? "ACTIVE" : "CANCELLED";
+
+        ListInterface<entity.Booking> allBookings = bookingControl.getAllBookingsADT();
+        ListInterface<entity.Booking> filtered = new ArrayListADT<>();
+        for (int i = 1; i <= allBookings.getLength(); i++) {
+            entity.Booking b = allBookings.getEntry(i);
+            if (status.equals(b.getStatus())) {
+                filtered.add(b);
+            }
+        }
+
+        if (filtered.getLength() == 0) {
+            System.out.println("\nNo " + status.toLowerCase() + " bookings found.");
+            return;
+        }
+
+        System.out.println(String.format("\n--- %s Bookings (%d) ---\n", status, filtered.getLength()));
+        if ("ACTIVE".equals(status)) {
+            System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                    "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
+            System.out.println("-".repeat(115));
+            for (int i = 1; i <= filtered.getLength(); i++) {
+                entity.Booking b = filtered.getEntry(i);
+                System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
+                        b.getBookingID(), b.getRoomID(), b.getDate(),
+                        b.getTimeSlot(), b.getStatus(),
+                        b.getStudentUsername(), b.getStudentEmail()));
+            }
+        } else {
+            System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s %-25s",
+                    "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email", "Cancel Reason"));
+            System.out.println("-".repeat(140));
+            for (int i = 1; i <= filtered.getLength(); i++) {
+                entity.Booking b = filtered.getEntry(i);
+                String reason = b.getCancelReason() != null ? b.getCancelReason() : "";
+                System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s %-25s",
+                        b.getBookingID(), b.getRoomID(), b.getDate(),
+                        b.getTimeSlot(), b.getStatus(),
+                        b.getStudentUsername(), b.getStudentEmail(), reason));
+            }
+        }
+    }
+
     private void viewAllBookings() {
         System.out.println("\n========== VIEW ALL BOOKINGS ==========");
-        java.util.List<entity.Booking> allBookings = bookingControl.getAllBookings();
+        ListInterface<entity.Booking> allBookings = bookingControl.getAllBookingsADT();
 
-        if (allBookings.isEmpty()) {
+        if (allBookings.getLength() == 0) {
             System.out.println("No bookings found in the system.");
             return;
         }
 
-        System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.size()));
+        System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.getLength()));
         System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                 "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
         System.out.println("-".repeat(115));
 
-        for (entity.Booking booking : allBookings) {
+        for (int i = 1; i <= allBookings.getLength(); i++) {
+            entity.Booking booking = allBookings.getEntry(i);
             System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                     booking.getBookingID(), booking.getRoomID(), booking.getDate(),
                     booking.getTimeSlot(), booking.getStatus(),
@@ -708,19 +788,20 @@ public class StaffUI {
 
     private void viewBookingDetailsOption() {
         System.out.println("\n========== VIEW BOOKING DETAILS ==========");
-        java.util.List<entity.Booking> allBookings = bookingControl.getAllBookings();
+        ListInterface<entity.Booking> allBookings = bookingControl.getAllBookingsADT();
 
-        if (allBookings.isEmpty()) {
+        if (allBookings.getLength() == 0) {
             System.out.println("No bookings found in the system.");
             return;
         }
 
-        System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.size()));
+        System.out.println(String.format("\nTotal Bookings: %d\n", allBookings.getLength()));
         System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                 "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
         System.out.println("-".repeat(115));
 
-        for (entity.Booking booking : allBookings) {
+        for (int i = 1; i <= allBookings.getLength(); i++) {
+            entity.Booking booking = allBookings.getEntry(i);
             System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                     booking.getBookingID(), booking.getRoomID(), booking.getDate(),
                     booking.getTimeSlot(), booking.getStatus(),
@@ -816,19 +897,20 @@ public class StaffUI {
             return;
         }
 
-        java.util.List<entity.Booking> bookingsForDate = bookingControl.getBookingsByDate(dateInput);
+        ListInterface<entity.Booking> bookingsForDate = bookingControl.getBookingsByDateADT(dateInput);
 
-        if (bookingsForDate.isEmpty()) {
+        if (bookingsForDate.getLength() == 0) {
             System.out.println("\nNo bookings found for date: " + dateInput);
             return;
         }
 
-        System.out.println(String.format("\nBookings for %s: %d bookings\n", dateInput, bookingsForDate.size()));
+        System.out.println(String.format("\nBookings for %s: %d bookings\n", dateInput, bookingsForDate.getLength()));
         System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                 "Booking ID", "Room ID", "Date", "Time Slot", "Status", "Student Name", "Student Email"));
         System.out.println("-".repeat(115));
 
-        for (entity.Booking booking : bookingsForDate) {
+        for (int i = 1; i <= bookingsForDate.getLength(); i++) {
+            entity.Booking booking = bookingsForDate.getEntry(i);
             System.out.println(String.format("%-10s %-10s %-15s %-15s %-12s %-15s %-20s",
                     booking.getBookingID(), booking.getRoomID(), booking.getDate(),
                     booking.getTimeSlot(), booking.getStatus(),
@@ -1020,7 +1102,7 @@ public class StaffUI {
     }
 
     private String selectEquipment() {
-        List<String> selectedEquipment = new ArrayList<>();
+        ListInterface<String> selectedEquipment = new ArrayListADT<>();
         
         while (true) {
             System.out.println("\nSelect equipment (multiple allowed):");
@@ -1068,11 +1150,11 @@ public class StaffUI {
             }
         }
         
-        if (selectedEquipment.isEmpty()) {
+        if (selectedEquipment.getLength() == 0) {
             return "Other";
         }
         
-        return String.join(", ", selectedEquipment);
+        return joinEquipmentList(selectedEquipment);
     }
 
     private String selectQuantity(String item) {
@@ -1094,7 +1176,7 @@ public class StaffUI {
         System.out.println("\n========== UPDATE EQUIPMENT ==========");
         System.out.println("Current equipment: " + currentEquipment);
         
-        List<String> equipmentList = new ArrayList<>();
+        ListInterface<String> equipmentList = new ArrayListADT<>();
         if (currentEquipment != null && !currentEquipment.isBlank()) {
             String[] items = currentEquipment.split(", ");
             for (String item : items) {
@@ -1104,10 +1186,10 @@ public class StaffUI {
         
         while (true) {
             System.out.println("\n--- Equipment Management ---");
-            if (!equipmentList.isEmpty()) {
+            if (equipmentList.getLength() > 0) {
                 System.out.println("Current equipment:");
-                for (int i = 0; i < equipmentList.size(); i++) {
-                    System.out.println((i + 1) + ". " + equipmentList.get(i));
+                for (int i = 1; i <= equipmentList.getLength(); i++) {
+                    System.out.println(i + ". " + equipmentList.getEntry(i));
                 }
             } else {
                 System.out.println("No equipment currently assigned.");
@@ -1129,7 +1211,7 @@ public class StaffUI {
                     return currentEquipment;
                 default:
                     // Modify existing equipment (1-4 or higher if more items)
-                    if (choice > 0 && choice <= equipmentList.size()) {
+                    if (choice > 0 && choice <= equipmentList.getLength()) {
                         modifyEquipment(equipmentList, choice - 1);
                     } else {
                         System.out.println("Invalid choice.");
@@ -1138,15 +1220,15 @@ public class StaffUI {
             
             // Check if user wants to finish
             if (askToDone()) {
-                if (equipmentList.isEmpty()) {
+                if (equipmentList.getLength() == 0) {
                     return "Other";
                 }
-                return String.join(", ", equipmentList);
+                return joinEquipmentList(equipmentList);
             }
         }
     }
 
-    private void addNewEquipmentToList(List<String> equipmentList) {
+    private void addNewEquipmentToList(ListInterface<String> equipmentList) {
         System.out.println("\nAdd Equipment:");
         System.out.println("1. Projector");
         System.out.println("2. Computer");
@@ -1186,8 +1268,8 @@ public class StaffUI {
         }
     }
 
-    private void modifyEquipment(List<String> equipmentList, int index) {
-        String currentEquip = equipmentList.get(index);
+    private void modifyEquipment(ListInterface<String> equipmentList, int index) {
+        String currentEquip = equipmentList.getEntry(index + 1);
         System.out.println("\nModify: " + currentEquip);
         System.out.println("1. Change quantity");
         System.out.println("2. Delete");
@@ -1202,13 +1284,24 @@ public class StaffUI {
             if (parts.length == 2) {
                 String name = parts[0].trim();
                 String newEquip = selectQuantity(name);
-                equipmentList.set(index, newEquip);
+                equipmentList.replace(index + 1, newEquip);
                 System.out.println(ConsoleColors.success("Updated to: " + newEquip));
             }
         } else if (choice == 2) {
-            equipmentList.remove(index);
+            equipmentList.remove(index + 1);
             System.out.println(ConsoleColors.success("Deleted: " + currentEquip));
         }
+    }
+
+    private String joinEquipmentList(ListInterface<String> equipmentList) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= equipmentList.getLength(); i++) {
+            if (i > 1) {
+                sb.append(", ");
+            }
+            sb.append(equipmentList.getEntry(i));
+        }
+        return sb.toString();
     }
 
     private boolean askToDone() {

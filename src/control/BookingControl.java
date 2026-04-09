@@ -6,10 +6,8 @@ import entity.Booking;
 import entity.Room;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import util.BookingDateTimeComparator;
 import util.BookingInputValidator;
 import util.RoomComparator;
-import java.util.Arrays;
 
 public class BookingControl {
 
@@ -159,10 +157,6 @@ public class BookingControl {
         return CANCEL_OK;
     }
 
-    public boolean bookingExists(String bookingID) {
-        return findBookingById(bookingID) != null;
-    }
-
     public int getCancelEligibility(String bookingID) {
         Booking b = findBookingById(bookingID);
         if (b == null) {
@@ -182,16 +176,6 @@ public class BookingControl {
         return CANCEL_OK;
     }
 
-    public int countActiveBookings() {
-        int count = 0;
-        for (int i = 1; i <= bookingList.getLength(); i++) {
-            if ("ACTIVE".equalsIgnoreCase(bookingList.getEntry(i).getStatus())) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     private boolean matchesStatusFilter(Booking b, String filter) {
         if (filter == null || "ALL".equalsIgnoreCase(filter)) {
             return true;
@@ -199,13 +183,29 @@ public class BookingControl {
         return filter.equalsIgnoreCase(b.getStatus());
     }
 
-    public void displayBookings(String statusFilter) {
-        int count = countMatching(statusFilter);
+    private boolean matchesStudentFilter(Booking b, String username) {
+        if (username == null || username.isEmpty()) {
+            return true;
+        }
+        return username.equalsIgnoreCase(b.getStudentUsername());
+    }
+
+    /**
+     * Display bookings belonging to a specific student (filtered by username).
+     */
+    public void displayBookingsForStudent(String username, String statusFilter) {
+        int count = 0;
+        for (int i = 1; i <= bookingList.getLength(); i++) {
+            Booking b = bookingList.getEntry(i);
+            if (matchesStudentFilter(b, username) && matchesStatusFilter(b, statusFilter)) {
+                count++;
+            }
+        }
         if (count == 0) {
             System.out.println(emptyFilterMessage(statusFilter));
             return;
         }
-        System.out.println("\n--- Bookings (" + filterLabel(statusFilter) + ") ---");
+        System.out.println("\n--- Your Bookings (" + filterLabel(statusFilter) + ") ---");
         if ("ACTIVE".equalsIgnoreCase(statusFilter)) {
             System.out.println("ID | Room | Date | Time | Status");
         } else {
@@ -213,48 +213,10 @@ public class BookingControl {
         }
         for (int i = 1; i <= bookingList.getLength(); i++) {
             Booking b = bookingList.getEntry(i);
-            if (matchesStatusFilter(b, statusFilter)) {
+            if (matchesStudentFilter(b, username) && matchesStatusFilter(b, statusFilter)) {
                 System.out.println(b);
             }
         }
-    }
-
-    /**
-     * Display bookings with student name (for staff view)
-     */
-    public void displayBookingsWithStudentInfo(String statusFilter) {
-        int count = countMatching(statusFilter);
-        if (count == 0) {
-            System.out.println(emptyFilterMessage(statusFilter));
-            return;
-        }
-        System.out.println("\n--- Bookings (" + filterLabel(statusFilter) + ") ---");
-        if ("ACTIVE".equalsIgnoreCase(statusFilter)) {
-            System.out.println("ID | Room | Date | Time | Student Name | Status");
-        } else {
-            System.out.println("ID | Room | Date | Time | Student Name | Status | (Reason if cancelled)");
-        }
-        for (int i = 1; i <= bookingList.getLength(); i++) {
-            Booking b = bookingList.getEntry(i);
-            if (matchesStatusFilter(b, statusFilter)) {
-                String base = b.getBookingID() + " | " + b.getRoomID() + " | " + b.getDate() + " | " + b.getTimeSlot() + " | " + b.getStudentUsername() + " | " + b.getStatus();
-                if ("CANCELLED".equals(b.getStatus()) && b.getCancelReason() != null && !b.getCancelReason().isEmpty()) {
-                    System.out.println(base + " | Reason: " + b.getCancelReason());
-                } else {
-                    System.out.println(base);
-                }
-            }
-        }
-    }
-
-    private int countMatching(String statusFilter) {
-        int n = 0;
-        for (int i = 1; i <= bookingList.getLength(); i++) {
-            if (matchesStatusFilter(bookingList.getEntry(i), statusFilter)) {
-                n++;
-            }
-        }
-        return n;
     }
 
     private static String filterLabel(String statusFilter) {
@@ -314,15 +276,9 @@ public class BookingControl {
             return null;
         }
 
-        // Convert to array for sorting
-        Room[] roomsArray = new Room[filteredRooms.getLength()];
-        for (int i = 0; i < filteredRooms.getLength(); i++) {
-            roomsArray[i] = filteredRooms.getEntry(i + 1);
-        }
-
-        // Sort using RoomComparator
+        // Sort using ADT sort() with RoomComparator
         RoomComparator comparator = new RoomComparator();
-        Arrays.sort(roomsArray, comparator);
+        filteredRooms.sort(comparator);
 
         // Create a list of room IDs for validation later
         ListInterface<String> roomIds = new ArrayListADT<>();
@@ -330,11 +286,28 @@ public class BookingControl {
         // Display filtered and sorted rooms with equipment (without category column)
         System.out.println("\n--- Rooms with capacity " + requiredCapacity + "+ ---");
         System.out.println("Room ID | Location | Capacity | Equipment");
-        for (Room room : roomsArray) {
+        for (int i = 1; i <= filteredRooms.getLength(); i++) {
+            Room room = filteredRooms.getEntry(i);
             System.out.println(room.getRoomID() + " | " + room.getLocation() + " | " + room.getCapacity() + " | " + room.getEquipment());
             roomIds.add(room.getRoomID());
         }
         return roomIds;
+    }
+
+    /**
+     * Returns the maximum capacity among all currently bookable rooms.
+     * Returns 0 when there are no bookable rooms.
+     */
+    public int getMaximumBookableCapacity() {
+        ListInterface<Room> bookableRooms = facilityControl.getBookableRooms();
+        int maxCapacity = 0;
+        for (int i = 1; i <= bookableRooms.getLength(); i++) {
+            Room room = bookableRooms.getEntry(i);
+            if (room.getCapacity() > maxCapacity) {
+                maxCapacity = room.getCapacity();
+            }
+        }
+        return maxCapacity;
     }
 
     /**
@@ -366,15 +339,9 @@ public class BookingControl {
             return null;
         }
 
-        // Convert to array for sorting
-        Room[] roomsArray = new Room[filteredRooms.getLength()];
-        for (int i = 0; i < filteredRooms.getLength(); i++) {
-            roomsArray[i] = filteredRooms.getEntry(i + 1);
-        }
-
-        // Sort using RoomComparator
+        // Sort using ADT sort() with RoomComparator
         RoomComparator comparator = new RoomComparator();
-        Arrays.sort(roomsArray, comparator);
+        filteredRooms.sort(comparator);
 
         // Create a list of room IDs for validation later
         ListInterface<String> roomIds = new ArrayListADT<>();
@@ -382,7 +349,8 @@ public class BookingControl {
         // Display rooms with equipment (without category column)
         System.out.println("\n--- Rooms in Block " + blockLetter + " with capacity " + minCapacity + "-" + (maxCapacity == Integer.MAX_VALUE ? "unlimited" : maxCapacity) + " ---");
         System.out.println("Room ID | Location | Capacity | Equipment");
-        for (Room room : roomsArray) {
+        for (int i = 1; i <= filteredRooms.getLength(); i++) {
+            Room room = filteredRooms.getEntry(i);
             System.out.println(room.getRoomID() + " | " + room.getLocation() + " | " + room.getCapacity() + " | " + room.getEquipment());
             roomIds.add(room.getRoomID());
         }
@@ -479,37 +447,6 @@ public class BookingControl {
         return availableSlots;
     }
 
-    public void filterAvailableRooms(String isoDate, String timeSlot) {
-        String d = isoDate == null ? "" : isoDate.trim();
-        String t = timeSlot == null ? "" : timeSlot.trim();
-
-        System.out.println("\n--- Rooms available for this date & time ---");
-        int shown = 0;
-        ListInterface<Room> bookableRooms = facilityControl.getBookableRooms();
-        int len = bookableRooms.getLength();
-        for (int i = 1; i <= len; i++) {
-            Room room = bookableRooms.getEntry(i);
-            boolean isBooked = false;
-            for (int j = 1; j <= bookingList.getLength(); j++) {
-                Booking b = bookingList.getEntry(j);
-                if (b.getRoomID().equalsIgnoreCase(room.getRoomID())
-                        && b.getDate().equals(d)
-                        && b.getTimeSlot().equals(t)
-                        && "ACTIVE".equals(b.getStatus())) {
-                    isBooked = true;
-                    break;
-                }
-            }
-            if (!isBooked) {
-                System.out.println(room);
-                shown++;
-            }
-        }
-        if (shown == 0) {
-            System.out.println("No rooms are free for that slot (all booked or no rooms).");
-        }
-    }
-
     /**
      * Uses ADT remove() method to permanently delete a booking from the list.
      * Returns REMOVE_OK if successful, REMOVE_NOT_FOUND otherwise.
@@ -527,75 +464,10 @@ public class BookingControl {
     }
 
     /**
-     * Uses ADT sort() method to sort all bookings by date and time
-     * using the BookingDateTimeComparator, then displays them.
-     */
-    public void displaySortedBookings(String statusFilter) {
-        // Filter bookings into a temporary list
-        ListInterface<Booking> filteredList = new ArrayListADT<>();
-        for (int i = 1; i <= bookingList.getLength(); i++) {
-            Booking b = bookingList.getEntry(i);
-            if (matchesStatusFilter(b, statusFilter)) {
-                filteredList.add(b);
-            }
-        }
-
-        if (filteredList.isEmpty()) {
-            System.out.println(emptyFilterMessage(statusFilter));
-            return;
-        }
-
-        // Sort the filtered list using ADT sort() with BookingDateTimeComparator
-        filteredList.sort(new BookingDateTimeComparator());
-
-        System.out.println("\n--- Bookings (" + filterLabel(statusFilter) + ") - Sorted by Date & Time ---");
-        if ("ACTIVE".equalsIgnoreCase(statusFilter)) {
-            System.out.println("ID | Room | Date | Time | Status");
-        } else {
-            System.out.println("ID | Room | Date | Time | Status | (Reason if cancelled)");
-        }
-        for (int i = 1; i <= filteredList.getLength(); i++) {
-            System.out.println(filteredList.getEntry(i));
-        }
-    }
-
-    /**
-     * Uses ADT remove() method to permanently delete all bookings with past dates.
-     * Useful for cleaning up old data. Returns the count of removed bookings.
-     */
-    public int removeExpiredBookings() {
-        LocalDate today = LocalDate.now();
-        int removedCount = 0;
-
-        // Iterate through the list and remove past bookings
-        for (int i = bookingList.getLength(); i >= 1; i--) {
-            Booking b = bookingList.getEntry(i);
-            LocalDate bookingDate = BookingInputValidator.parseBookingDate(b.getDate());
-            if (bookingDate != null && bookingDate.isBefore(today)) {
-                bookingList.remove(i);
-                removedCount++;
-            }
-        }
-
-        if (removedCount > 0) {
-            saveBookingsToFile();
-        }
-        return removedCount;
-    }
-
-    /**
-     * Uses ADT contains() method to check if a booking exists in the list.
-     * More efficient existence check using ADT's built-in method.
-     */
-    public boolean bookingExistsInList(Booking booking) {
-        return bookingList.contains(booking);
-    }
-
-    /**
      * Get all bookings as a list
      */
-    public java.util.List<Booking> getAllBookings() {
-        java.util.List<Booking> allBookings = new java.util.ArrayList<>();
+    public ListInterface<Booking> getAllBookingsADT() {
+        ListInterface<Booking> allBookings = new ArrayListADT<>();
         for (int i = 1; i <= bookingList.getLength(); i++) {
             allBookings.add(bookingList.getEntry(i));
         }
@@ -605,8 +477,8 @@ public class BookingControl {
     /**
      * Get bookings for a specific date
      */
-    public java.util.List<Booking> getBookingsByDate(String date) {
-        java.util.List<Booking> bookingsForDate = new java.util.ArrayList<>();
+    public ListInterface<Booking> getBookingsByDateADT(String date) {
+        ListInterface<Booking> bookingsForDate = new ArrayListADT<>();
         if (date == null || date.trim().isEmpty()) {
             return bookingsForDate;
         }
@@ -619,10 +491,6 @@ public class BookingControl {
         return bookingsForDate;
     }
 
-    /**
-     * Load bookings from file (bookings.txt)
-     * File format: bookingID|roomID|date|timeSlot|status|cancelReason|studentUsername
-     */
     /**
      * Load bookings from file (bookings.txt)
      * File format: bookingID|roomID|date|timeSlot|status|cancelReason|studentUsername|studentEmail

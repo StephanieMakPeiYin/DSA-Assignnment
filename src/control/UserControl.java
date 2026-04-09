@@ -1,9 +1,8 @@
 package control;
 
 import adt.ArrayListADT;
+import adt.ListInterface;
 import entity.User;
-import java.util.ArrayList;
-import java.util.List;
 import util.UserFileManager;
 
 public class UserControl {
@@ -23,10 +22,13 @@ public class UserControl {
     }
 
     private void loadUsersFromFile() {
-        List<User> loadedUsers = UserFileManager.loadUsers();
-        for (User user : loadedUsers) {
-            userList.add(user);
-            updateCountersByUserID(user.getUserID());
+        ListInterface<User> loadedUsers = UserFileManager.loadUsersADT();
+        for (int i = 1; i <= loadedUsers.getLength(); i++) {
+            User user = loadedUsers.getEntry(i);
+            if (user != null) {
+                userList.add(user);
+                updateCountersByUserID(user.getUserID());
+            }
         }
     }
 
@@ -57,8 +59,8 @@ public class UserControl {
         return "";
     }
 
-    private List<User> toJavaList() {
-        List<User> allUsers = new ArrayList<>();
+    private ListInterface<User> toAdtList() {
+        ListInterface<User> allUsers = new ArrayListADT<>();
         int total = userList.getLength();
         for (int i = 1; i <= total; i++) {
             User user = userList.getEntry(i);
@@ -72,9 +74,9 @@ public class UserControl {
     /**
      * Get all users from the system
      */
-    public List<User> getAllUsers() {
+    public ListInterface<User> getAllUsers() {
         refreshUserList();
-        return toJavaList();
+        return toAdtList();
     }
 
     /**
@@ -85,8 +87,8 @@ public class UserControl {
             return null;
         }
         refreshUserList();
-        List<User> allUsers = toJavaList();
-        for (User user : allUsers) {
+        for (int i = 1; i <= userList.getLength(); i++) {
+            User user = userList.getEntry(i);
             if (user.getEmail().equals(email)) {
                 return user;
             }
@@ -102,8 +104,8 @@ public class UserControl {
             return null;
         }
         refreshUserList();
-        List<User> allUsers = toJavaList();
-        for (User user : allUsers) {
+        for (int i = 1; i <= userList.getLength(); i++) {
+            User user = userList.getEntry(i);
             if (user.getUserID() != null && user.getUserID().equalsIgnoreCase(userID)) {
                 return user;
             }
@@ -114,15 +116,15 @@ public class UserControl {
     /**
      * Find a user by name (case-insensitive partial match)
      */
-    public List<User> findUsersByName(String name) {
-        List<User> results = new java.util.ArrayList<>();
+    public ListInterface<User> findUsersByName(String name) {
+        ListInterface<User> results = new ArrayListADT<>();
         if (name == null || name.trim().isEmpty()) {
             return results;
         }
         refreshUserList();
         String searchName = name.trim().toLowerCase();
-        List<User> allUsers = toJavaList();
-        for (User user : allUsers) {
+        for (int i = 1; i <= userList.getLength(); i++) {
+            User user = userList.getEntry(i);
             if (user.getName() != null && user.getName().toLowerCase().contains(searchName)) {
                 results.add(user);
             }
@@ -145,7 +147,7 @@ public class UserControl {
             if (user != null && user.getEmail().equals(email)) {
                 user.setStatus("removed");
                 userList.replace(i, user);
-                UserFileManager.saveUsers(toJavaList());
+                UserFileManager.saveUsersADT(userList);
                 return true;
             }
         }
@@ -170,7 +172,7 @@ public class UserControl {
                 user.setUserID(generateUserID(user.getUserType()));
             }
             userList.add(user);
-            UserFileManager.saveUsers(toJavaList());
+            UserFileManager.saveUsersADT(userList);
         }
     }
 
@@ -188,7 +190,7 @@ public class UserControl {
             User existingUser = userList.getEntry(i);
             if (existingUser != null && existingUser.getEmail().equals(updatedUser.getEmail())) {
                 userList.replace(i, updatedUser);
-                UserFileManager.saveUsers(toJavaList());
+                UserFileManager.saveUsersADT(userList);
                 return true;
             }
         }

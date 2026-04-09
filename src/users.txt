@@ -3,3 +3,5 @@ STU001|YongKean|yk@gmail.com|yk123|STUDENT|active
 STU002|WeiXuan|wx@gmail.com|wx123|STUDENT|active
 STU003|stephanie|step@gmail.com|step123|STUDENT|active
 STU004|John|john@gmail.com|john123|STUDENT|active
+STU005|Tom|tom@gmail.com|tom123|STUDENT|active
+STA002|jim|jimmy@gmail.com|jim123|STUDENT|active

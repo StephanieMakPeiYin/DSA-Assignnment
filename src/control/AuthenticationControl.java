@@ -1,8 +1,8 @@
 package control;
 
+import adt.ListInterface;
 import entity.User;
 import util.AuthenticationValidator;
-import java.util.List;
 
 public class AuthenticationControl {
     private UserControl userControl;
@@ -39,8 +39,9 @@ public class AuthenticationControl {
 
         // Check if user exists (case-sensitive email matching)
         User user = null;
-        List<User> allUsers = userControl.getAllUsers();
-        for (User u : allUsers) {
+        ListInterface<User> allUsers = userControl.getAllUsers();
+        for (int i = 1; i <= allUsers.getLength(); i++) {
+            User u = allUsers.getEntry(i);
             if (u.getEmail().equals(email)) {
                 user = u;
                 break;

@@ -1,2 +1,7 @@
 B1|A101|2026-04-02|09:00-11:00|ACTIVE||stephanie|step@gmail.com
 B2|A110|2026-04-02|11:00-13:00|CANCELLED|Room no longer needed|stephanie|step@gmail.com
+B3|B206|2026-04-05|09:00-11:00|ACTIVE||John|john@gmail.com
+B4|A110|2026-04-06|13:00-15:00|CANCELLED|Wrong date or time booked|John|john@gmail.com
+B5|A105|2026-04-06|13:00-15:00|ACTIVE||John|john@gmail.com
+B6|A104|2026-04-08|09:00-11:00|CANCELLED|Room no longer needed|Tom|tom@gmail.com
+B7|A104|2026-04-08|11:00-13:00|ACTIVE||Tom|tom@gmail.com
