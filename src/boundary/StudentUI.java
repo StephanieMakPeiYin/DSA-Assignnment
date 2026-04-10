@@ -157,6 +157,12 @@ public class StudentUI {
                 continue;
             }
             
+            // Check if new password is the same as current password
+            if (newPassword.equals(currentUser.getPassword())) {
+                System.out.println(ConsoleColors.error("\n[ERROR] New password cannot be the same as your current password."));
+                continue;
+            }
+            
             // Confirm password
             System.out.print("Confirm new password: ");
             String confirmPassword = scanner.nextLine();
@@ -164,6 +170,7 @@ public class StudentUI {
                 System.out.println(ConsoleColors.error("\n[ERROR] Passwords do not match. Please try again."));
                 continue;
             }
+            
             break;
         }
 
