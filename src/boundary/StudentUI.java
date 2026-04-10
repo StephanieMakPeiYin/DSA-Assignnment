@@ -93,6 +93,7 @@ public class StudentUI {
         System.out.println("========== CURRENT PROFILE ==========");
         System.out.println("Name: " + currentUser.getName());
         System.out.println("Email: " + currentUser.getEmail());
+        System.out.println("Password: " + currentUser.getPassword());
 
         System.out.println("\n--- Enter new information (press ENTER to keep current or 0 to CANCEL) ---\n");
 

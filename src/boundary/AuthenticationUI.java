@@ -113,4 +113,22 @@ public class AuthenticationUI {
             return -1;
         }
     }
+
+    private boolean isValidName(String name) {
+        return name != null && !name.isEmpty() && name.length() <= 20 && !name.contains(" ");
+    }
+
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 5) {
+            return false;
+        }
+        return password.chars().anyMatch(Character::isDigit);
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        return email.endsWith("@gmail.com") && email.contains("@") && email.indexOf("@") > 0;
+    }
 }
